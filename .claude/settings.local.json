@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find node_modules/next/dist/docs/01-app/03-api-reference -name \"*.md\" -type f 2>/dev/null | grep -E \"\\(layout|page|route|middleware|next-config|server-action\\)\" | head -20)",
+      "Bash(which pnpm:*)",
+      "Bash(cd \"D:/soqqali/trackflow\" && rm -rf node_modules package-lock.json && pnpm install)",
+      "Bash(cd \"D:/soqqali/trackflow\" && pnpm install)",
+      "Bash(cd \"D:/soqqali/trackflow\" && rm -rf node_modules && pnpm install 2>&1)",
+      "Bash(cd \"D:/soqqali/trackflow\" && ls node_modules/.pnpm/eslint*/node_modules/eslint/package.json 2>&1 | head -5)",
+      "Bash(cd \"D:/soqqali/trackflow\" && pnpm install --force 2>&1 | tail -5)",
+      "Bash(cd \"D:/soqqali/trackflow\" && pnpm config set node-linker hoisted && rm -rf node_modules && pnpm install 2>&1 | tail -10)",
+      "Bash(cd \"D:/soqqali/trackflow\" && pnpm add prisma @prisma/client next-auth@beta @auth/prisma-adapter zod nuqs framer-motion lucide-react @octokit/rest uploadthing @uploadthing/react 2>&1 | tail -5)",
+      "Bash(cd \"D:/soqqali/trackflow\" && pnpm add next@latest react@latest react-dom@latest 2>&1 | tail -3)",
+      "Bash(cd \"D:/soqqali/trackflow\" && mkdir -p src/app/\"\\(auth\\)\" src/app/\"\\(dashboard\\)\"/projects src/app/\"\\(dashboard\\)\"/brain src/app/\"\\(dashboard\\)\"/settings src/app/api/og src/app/api/webhooks src/app/api/public src/components/ui src/components/dashboard src/components/project src/components/profile src/lib src/actions src/types)",
+      "Bash(cd \"D:/soqqali/trackflow\" && npx prisma generate 2>&1 | tail -10)",
+      "Bash(cd \"D:/soqqali/trackflow\" && npx prisma generate 2>&1)",
+      "Bash(cd \"D:/soqqali/trackflow\" && pnpm remove prisma @prisma/client && pnpm add prisma@^6 @prisma/client@^6 2>&1 | tail -5)",
+      "Bash(cd \"D:/soqqali/trackflow\" && npx prisma --version 2>&1 | head -3)",
+      "Bash(cd \"D:/soqqali/trackflow\" && npx shadcn@latest init 2>&1 <<EOF\nnew-york\nneutral\nyes\nEOF)",
+      "Bash(cd \"D:/soqqali/trackflow\" && npx shadcn@latest init --help 2>&1 | head -30)",
+      "Bash(cd \"D:/soqqali/trackflow\" && npx shadcn@latest init -d -y -f 2>&1)"
+    ]
+  }
+}
