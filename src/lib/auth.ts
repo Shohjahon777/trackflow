@@ -12,11 +12,55 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
-    session({ session, user }) {
+    async session({ session, user }) {
       if (session.user) {
         session.user.id = user.id;
+
+        // Fetch extra fields from our User model
+        const dbUser = await db.user.findUnique({
+          where: { id: user.id },
+          select: { username: true, bio: true, githubUsername: true },
+        });
+
+        if (dbUser) {
+          session.user.username = dbUser.username;
+          session.user.bio = dbUser.bio;
+          session.user.githubUsername = dbUser.githubUsername;
+        }
       }
       return session;
+    },
+  },
+  events: {
+    async createUser({ user }) {
+      // Auto-generate username from GitHub profile
+      if (user.id) {
+        const account = await db.account.findFirst({
+          where: { userId: user.id, provider: "github" },
+        });
+
+        if (account) {
+          // Fetch GitHub username via the provider account
+          const res = await fetch("https://api.github.com/user/" + account.providerAccountId);
+          if (res.ok) {
+            const ghProfile = await res.json();
+            const githubUsername = ghProfile.login;
+
+            // Check if username is taken
+            const existing = await db.user.findUnique({
+              where: { username: githubUsername },
+            });
+
+            await db.user.update({
+              where: { id: user.id },
+              data: {
+                githubUsername: githubUsername,
+                username: existing ? null : githubUsername,
+              },
+            });
+          }
+        }
+      }
     },
   },
   pages: {
