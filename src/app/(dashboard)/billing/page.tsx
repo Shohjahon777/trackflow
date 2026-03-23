@@ -4,19 +4,29 @@ import { checkPlan } from "@/lib/plan";
 import { PLANS } from "@/lib/stripe";
 import { db } from "@/lib/db";
 import { BillingView } from "@/components/billing/billing-view";
+import { verifyCheckout } from "@/actions/billing";
 
 export const metadata: Metadata = {
   title: "Billing",
 };
 
-export default async function BillingPage() {
+export default async function BillingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ success?: string; cancelled?: string }>;
+}) {
   const session = await auth();
   const userId = session!.user!.id!;
+  const params = await searchParams;
 
-  const [plan, projectCount, noteCount] = await Promise.all([
+  // After Stripe redirect — verify and activate the plan
+  if (params.success === "true") {
+    await verifyCheckout();
+  }
+
+  const [plan, projectCount] = await Promise.all([
     checkPlan(userId),
     db.project.count({ where: { userId } }),
-    db.note.count({ where: { project: { userId } } }),
   ]);
 
   return (
