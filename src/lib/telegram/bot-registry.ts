@@ -2,14 +2,11 @@ import { db } from "@/lib/db";
 import { decrypt } from "@/lib/encryption";
 import type { TelegramBotConfig } from "@/types/telegram";
 
-// TODO: Remove `as any` after `prisma generate`
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const prisma = db as any;
 
 export async function getBotById(
   botId: string
 ): Promise<TelegramBotConfig | null> {
-  const bot = await prisma.telegramBot.findUnique({
+  const bot = await db.telegramBot.findUnique({
     where: { id: botId },
   });
 
@@ -22,7 +19,7 @@ export async function getBotById(
 }
 
 export async function getAllBots(userId: string) {
-  return prisma.telegramBot.findMany({
+  return db.telegramBot.findMany({
     where: { userId },
     select: {
       id: true,
@@ -44,18 +41,18 @@ export async function logBotEvent(
   payload?: Record<string, unknown>,
   level: "info" | "warn" | "error" = "info"
 ) {
-  await prisma.telegramBotLog.create({
+  await db.telegramBotLog.create({
     data: {
       botId,
       event,
-      payload: payload ?? undefined,
+      payload: (payload ?? undefined) as Record<string, string> | undefined,
       level,
     },
   });
 
   // Update lastPingAt on non-error events
   if (level !== "error") {
-    await prisma.telegramBot.update({
+    await db.telegramBot.update({
       where: { id: botId },
       data: { lastPingAt: new Date(), errorCount: 0 },
     });
@@ -63,14 +60,14 @@ export async function logBotEvent(
 }
 
 export async function incrementErrorCount(botId: string) {
-  const bot = await prisma.telegramBot.update({
+  const bot = await db.telegramBot.update({
     where: { id: botId },
     data: { errorCount: { increment: 1 } },
   });
 
   // Circuit breaker: disable after 50 consecutive errors
   if (bot.errorCount >= 50) {
-    await prisma.telegramBot.update({
+    await db.telegramBot.update({
       where: { id: botId },
       data: { isEnabled: false },
     });
@@ -86,7 +83,7 @@ export async function getBotLogs(
 ) {
   const { level, limit = 50, offset = 0 } = options;
 
-  return prisma.telegramBotLog.findMany({
+  return db.telegramBotLog.findMany({
     where: {
       botId,
       ...(level ? { level } : {}),

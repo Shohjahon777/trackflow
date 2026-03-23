@@ -2,9 +2,6 @@ import { z } from "zod";
 import type { BotHandler } from "@/types/telegram";
 import { db } from "@/lib/db";
 
-// TODO: Remove after `prisma generate`
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const prisma = db as any;
 
 const configSchema = z.object({
   notifyOnDeploy: z.boolean().default(true),
@@ -30,7 +27,7 @@ export const notificationHandler: BotHandler = {
       const chatId = ctx.chat.id;
 
       // We need to find the bot record to get the userId
-      const botRecord = await prisma.telegramBot.findFirst({
+      const botRecord = await db.telegramBot.findFirst({
         where: { botUsername: ctx.me.username },
       });
 
@@ -39,7 +36,7 @@ export const notificationHandler: BotHandler = {
         return;
       }
 
-      await prisma.telegramChat.upsert({
+      await db.telegramChat.upsert({
         where: { chatId: String(chatId) },
         create: {
           chatId: String(chatId),
@@ -60,7 +57,7 @@ export const notificationHandler: BotHandler = {
     });
 
     bot.command("status", async (ctx) => {
-      const botRecord = await prisma.telegramBot.findFirst({
+      const botRecord = await db.telegramBot.findFirst({
         where: { botUsername: ctx.me.username },
       });
 
@@ -105,7 +102,7 @@ export const notificationHandler: BotHandler = {
     bot.command("mute", async (ctx) => {
       const chatId = String(ctx.chat.id);
 
-      await prisma.telegramChat.deleteMany({
+      await db.telegramChat.deleteMany({
         where: { chatId },
       });
 

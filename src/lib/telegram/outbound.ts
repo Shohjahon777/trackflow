@@ -2,9 +2,6 @@ import { Bot } from "grammy";
 import { db } from "@/lib/db";
 import { decrypt } from "@/lib/encryption";
 
-// TODO: Remove after `prisma generate`
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const prisma = db as any;
 
 /**
  * Send a notification message to a specific Telegram chat.
@@ -15,7 +12,7 @@ export async function sendNotification(
   message: string,
   options?: { parseMode?: "HTML" | "Markdown" }
 ) {
-  const botConfig = await prisma.telegramBot.findUnique({
+  const botConfig = await db.telegramBot.findUnique({
     where: { id: botId },
   });
   if (!botConfig || !botConfig.isEnabled) return;
@@ -34,7 +31,7 @@ export async function notifyUser(
   message: string,
   options?: { parseMode?: "HTML" | "Markdown" }
 ) {
-  const chats = await prisma.telegramChat.findMany({
+  const chats = await db.telegramChat.findMany({
     where: { userId },
   });
 

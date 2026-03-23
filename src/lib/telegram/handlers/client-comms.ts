@@ -2,9 +2,6 @@ import { z } from "zod";
 import type { BotHandler } from "@/types/telegram";
 import { db } from "@/lib/db";
 
-// TODO: Remove after `prisma generate`
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const prisma = db as any;
 
 const configSchema = z.object({
   projectId: z.string().optional(),
@@ -27,7 +24,7 @@ export const clientCommsHandler: BotHandler = {
     const config = configSchema.parse(rawConfig ?? {});
 
     bot.command("start", async (ctx) => {
-      const botRecord = await prisma.telegramBot.findFirst({
+      const botRecord = await db.telegramBot.findFirst({
         where: { botUsername: ctx.me.username },
       });
 
@@ -36,7 +33,7 @@ export const clientCommsHandler: BotHandler = {
         return;
       }
 
-      await prisma.telegramChat.upsert({
+      await db.telegramChat.upsert({
         where: { chatId: String(ctx.chat.id) },
         create: {
           chatId: String(ctx.chat.id),
@@ -94,7 +91,7 @@ export const clientCommsHandler: BotHandler = {
     });
 
     bot.command("status", async (ctx) => {
-      const botRecord = await prisma.telegramBot.findFirst({
+      const botRecord = await db.telegramBot.findFirst({
         where: { botUsername: ctx.me.username },
       });
 
@@ -159,7 +156,7 @@ export const clientCommsHandler: BotHandler = {
     });
 
     bot.command("milestone", async (ctx) => {
-      const botRecord = await prisma.telegramBot.findFirst({
+      const botRecord = await db.telegramBot.findFirst({
         where: { botUsername: ctx.me.username },
       });
 

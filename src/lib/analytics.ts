@@ -1,8 +1,5 @@
 import { db } from "@/lib/db";
 
-// TODO: Remove after `prisma generate` — these types are temporary
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const prisma = db as any;
 
 export type AnalyticsData = {
   totalViews: number;
@@ -21,24 +18,24 @@ export async function getAnalytics(
 
   const [totalViews, totalClicks, views, clicks, projects] = await Promise.all([
     // Total profile views
-    prisma.profileView.count({
+    db.profileView.count({
       where: { userId, timestamp: { gte: since } },
     }),
 
     // Total project clicks
-    prisma.projectClick.count({
+    db.projectClick.count({
       where: { project: { userId }, timestamp: { gte: since } },
     }),
 
     // Views by day
-    prisma.profileView.findMany({
+    db.profileView.findMany({
       where: { userId, timestamp: { gte: since } },
       select: { timestamp: true },
       orderBy: { timestamp: "asc" },
     }),
 
     // All clicks with referrers
-    prisma.projectClick.findMany({
+    db.projectClick.findMany({
       where: { project: { userId }, timestamp: { gte: since } },
       select: { referrer: true, projectId: true },
     }),

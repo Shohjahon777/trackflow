@@ -14,9 +14,6 @@ import { clearBotCache } from "@/lib/telegram/bot-factory";
 import { logBotEvent, getBotLogs } from "@/lib/telegram/bot-registry";
 import { z } from "zod";
 
-// TODO: Remove after `prisma generate`
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const prisma = db as any;
 
 const createBotSchema = z.object({
   name: z.string().min(1, "Name is required").max(100),
@@ -56,7 +53,7 @@ export async function createTelegramBot(formData: FormData) {
   }
 
   // Check if bot username is already registered
-  const existing = await prisma.telegramBot.findUnique({
+  const existing = await db.telegramBot.findUnique({
     where: { botUsername: botInfo.username },
   });
   if (existing) {
@@ -68,14 +65,14 @@ export async function createTelegramBot(formData: FormData) {
   const encryptedToken = encrypt(parsed.data.token);
 
   // Create bot record
-  const bot = await prisma.telegramBot.create({
+  const bot = await db.telegramBot.create({
     data: {
       name: parsed.data.name,
       botUsername: botInfo.username,
       token: encryptedToken,
       webhookSecret,
       handlerType: parsed.data.handlerType,
-      config: parsed.data.config ?? {},
+      config: (parsed.data.config ?? {}) as Record<string, string>,
       userId: session.user.id,
     },
   });
@@ -88,7 +85,7 @@ export async function createTelegramBot(formData: FormData) {
     });
   } catch (error) {
     // Cleanup on failure
-    await prisma.telegramBot.delete({ where: { id: bot.id } });
+    await db.telegramBot.delete({ where: { id: bot.id } });
     return {
       error: `Failed to register webhook: ${error instanceof Error ? error.message : "Unknown error"}`,
     };
@@ -104,7 +101,7 @@ export async function toggleTelegramBot(botId: string) {
     return { error: "Not authenticated" };
   }
 
-  const bot = await prisma.telegramBot.findFirst({
+  const bot = await db.telegramBot.findFirst({
     where: { id: botId, userId: session.user.id },
   });
 
@@ -132,7 +129,7 @@ export async function toggleTelegramBot(botId: string) {
     }
   }
 
-  await prisma.telegramBot.update({
+  await db.telegramBot.update({
     where: { id: botId },
     data: {
       isEnabled: newEnabled,
@@ -151,7 +148,7 @@ export async function deleteTelegramBot(botId: string) {
     return { error: "Not authenticated" };
   }
 
-  const bot = await prisma.telegramBot.findFirst({
+  const bot = await db.telegramBot.findFirst({
     where: { id: botId, userId: session.user.id },
   });
 
@@ -168,7 +165,7 @@ export async function deleteTelegramBot(botId: string) {
   }
 
   // Delete from database (cascades to logs)
-  await prisma.telegramBot.delete({ where: { id: botId } });
+  await db.telegramBot.delete({ where: { id: botId } });
 
   clearBotCache(botId);
   revalidatePath("/bots");
@@ -181,7 +178,7 @@ export async function rotateWebhookSecret(botId: string) {
     return { error: "Not authenticated" };
   }
 
-  const bot = await prisma.telegramBot.findFirst({
+  const bot = await db.telegramBot.findFirst({
     where: { id: botId, userId: session.user.id },
   });
 
@@ -199,7 +196,7 @@ export async function rotateWebhookSecret(botId: string) {
     return { error: "Failed to re-register webhook with new secret" };
   }
 
-  await prisma.telegramBot.update({
+  await db.telegramBot.update({
     where: { id: botId },
     data: { webhookSecret: newSecret },
   });
@@ -215,7 +212,7 @@ export async function reregisterAllWebhooks() {
     return { error: "Not authenticated" };
   }
 
-  const bots = await prisma.telegramBot.findMany({
+  const bots = await db.telegramBot.findMany({
     where: { userId: session.user.id, isEnabled: true },
   });
 
@@ -238,7 +235,7 @@ export async function getTelegramBots() {
   const session = await auth();
   if (!session?.user?.id) return [];
 
-  return prisma.telegramBot.findMany({
+  return db.telegramBot.findMany({
     where: { userId: session.user.id },
     select: {
       id: true,
@@ -262,7 +259,7 @@ export async function getTelegramBotLogs(
   if (!session?.user?.id) return [];
 
   // Verify ownership
-  const bot = await prisma.telegramBot.findFirst({
+  const bot = await db.telegramBot.findFirst({
     where: { id: botId, userId: session.user.id },
   });
   if (!bot) return [];

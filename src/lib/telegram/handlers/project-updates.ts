@@ -2,9 +2,6 @@ import { z } from "zod";
 import type { BotHandler } from "@/types/telegram";
 import { db } from "@/lib/db";
 
-// TODO: Remove after `prisma generate`
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const prisma = db as any;
 
 const configSchema = z.object({
   digestFrequency: z
@@ -31,7 +28,7 @@ export const projectUpdatesHandler: BotHandler = {
 
     bot.command("start", async (ctx) => {
       const chatId = ctx.chat.id;
-      const botRecord = await prisma.telegramBot.findFirst({
+      const botRecord = await db.telegramBot.findFirst({
         where: { botUsername: ctx.me.username },
       });
 
@@ -40,7 +37,7 @@ export const projectUpdatesHandler: BotHandler = {
         return;
       }
 
-      await prisma.telegramChat.upsert({
+      await db.telegramChat.upsert({
         where: { chatId: String(chatId) },
         create: {
           chatId: String(chatId),
@@ -58,7 +55,7 @@ export const projectUpdatesHandler: BotHandler = {
     });
 
     bot.command("digest", async (ctx) => {
-      const botRecord = await prisma.telegramBot.findFirst({
+      const botRecord = await db.telegramBot.findFirst({
         where: { botUsername: ctx.me.username },
       });
 
@@ -125,7 +122,7 @@ export const projectUpdatesHandler: BotHandler = {
     });
 
     bot.command("unsubscribe", async (ctx) => {
-      await prisma.telegramChat.deleteMany({
+      await db.telegramChat.deleteMany({
         where: { chatId: String(ctx.chat.id) },
       });
       await ctx.reply("Unsubscribed from project updates.");

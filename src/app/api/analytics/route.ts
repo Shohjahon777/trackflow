@@ -1,9 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 
-// TODO: Remove after `prisma generate`
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const prisma = db as any;
 
 /**
  * Lightweight tracking endpoint for public profile views and project clicks.
@@ -16,7 +13,7 @@ export async function POST(req: Request) {
     const { type, userId, projectId, referrer } = body;
 
     if (type === "profile_view" && userId) {
-      await prisma.profileView.create({
+      await db.profileView.create({
         data: {
           userId,
           referrer: referrer || null,
@@ -24,7 +21,7 @@ export async function POST(req: Request) {
         },
       });
     } else if (type === "project_click" && projectId) {
-      await prisma.projectClick.create({
+      await db.projectClick.create({
         data: {
           projectId,
           referrer: referrer || null,
