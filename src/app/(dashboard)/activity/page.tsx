@@ -1,4 +1,7 @@
+import type { Metadata } from "next";
 import { fetchUserRepos, fetchActivityData } from "@/actions/github";
+
+export const metadata: Metadata = { title: "Activity" };
 import { ActivityView } from "@/components/activity/activity-view";
 
 export default async function ActivityPage() {

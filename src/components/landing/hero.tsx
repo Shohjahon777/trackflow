@@ -104,7 +104,7 @@ export function Hero() {
               </div>
               <div className="mx-auto flex h-[24px] items-center rounded-md bg-fog px-4 text-[11px] text-text-tertiary dark:bg-surface-hover">
                 <span className="mr-1 size-[8px] rounded-full bg-success" />
-                trackflow.dev/projects
+                trackflow.dev/overview
               </div>
               <div className="w-[52px]" />
             </div>

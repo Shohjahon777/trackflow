@@ -1,8 +1,10 @@
 "use client";
 
-import { useActionState } from "react";
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { updateProfile } from "@/actions/profile";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 
 type ProfileFormProps = {
@@ -14,15 +16,27 @@ type ProfileFormProps = {
 };
 
 export function ProfileForm({ user }: ProfileFormProps) {
-  const [state, action, pending] = useActionState(
-    async (_prev: { error?: string; success?: boolean }, formData: FormData) => {
-      return await updateProfile(formData);
-    },
-    {}
-  );
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+  const [isPending, startTransition] = useTransition();
+  const router = useRouter();
+
+  function handleSubmit(formData: FormData) {
+    setError(null);
+    setSuccess(false);
+    startTransition(async () => {
+      const result = await updateProfile(formData);
+      if (result.error) {
+        setError(result.error);
+      } else {
+        setSuccess(true);
+        router.refresh();
+      }
+    });
+  }
 
   return (
-    <form action={action} className="space-y-4">
+    <form action={handleSubmit} className="space-y-4">
       {/* Name */}
       <div className="space-y-1.5">
         <label className="text-[12px] font-medium text-text-secondary">
@@ -61,27 +75,26 @@ export function ProfileForm({ user }: ProfileFormProps) {
         <label className="text-[12px] font-medium text-text-secondary">
           Bio
         </label>
-        <textarea
+        <Textarea
           name="bio"
           defaultValue={user.bio ?? ""}
           placeholder="A short bio about yourself..."
           rows={3}
-          className="w-full resize-none rounded-md border-[0.5px] border-stone bg-transparent px-3 py-2 text-[14px] text-text-body transition-colors duration-150 outline-none placeholder:text-ash focus-visible:border-accent focus-visible:ring-[3px] focus-visible:ring-accent-light dark:border-border dark:placeholder:text-text-tertiary"
         />
       </div>
 
       {/* Error / Success */}
-      {state.error && (
-        <p className="text-[13px] text-danger">{state.error}</p>
+      {error && (
+        <p className="text-[13px] text-danger">{error}</p>
       )}
-      {state.success && (
+      {success && (
         <p className="text-[13px] text-success">Profile updated.</p>
       )}
 
       {/* Submit */}
       <div className="flex justify-end">
-        <Button type="submit" disabled={pending}>
-          {pending ? "Saving..." : "Save changes"}
+        <Button type="submit" disabled={isPending}>
+          {isPending ? "Saving..." : "Save changes"}
         </Button>
       </div>
     </form>

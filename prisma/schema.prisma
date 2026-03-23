@@ -21,9 +21,13 @@ model User {
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")
 
-  accounts Account[]
-  sessions Session[]
-  projects Project[]
+  accounts      Account[]
+  sessions      Session[]
+  projects      Project[]
+  plan          Plan?
+  profileViews  ProfileView[]
+  telegramBots  TelegramBot[]
+  telegramChats TelegramChat[]
 
   @@map("users")
 }
@@ -85,8 +89,11 @@ model Project {
   createdAt   DateTime      @default(now()) @map("created_at")
   updatedAt   DateTime      @updatedAt @map("updated_at")
 
-  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  notes Note[]
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  notes         Note[]
+  milestones    Milestone[]
+  timeLogs      TimeLog[]
+  projectClicks ProjectClick[]
 
   @@unique([userId, slug])
   @@map("projects")
@@ -104,6 +111,128 @@ model Note {
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@map("notes")
+}
+
+model Milestone {
+  id        String   @id @default(cuid())
+  title     String
+  completed Boolean  @default(false)
+  order     Int      @default(0)
+  projectId String   @map("project_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("milestones")
+}
+
+model TimeLog {
+  id          String   @id @default(cuid())
+  description String
+  duration    Int      // duration in minutes
+  cost        Decimal? @db.Decimal(10, 2)
+  date        DateTime @default(now())
+  projectId   String   @map("project_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("time_logs")
+}
+
+model Plan {
+  id                   String     @id @default(cuid())
+  userId               String     @unique @map("user_id")
+  type                 PlanType   @default(FREE)
+  status               PlanStatus @default(ACTIVE)
+  stripeCustomerId     String?    @unique @map("stripe_customer_id")
+  stripeSubscriptionId String?    @unique @map("stripe_subscription_id")
+  stripePriceId        String?    @map("stripe_price_id")
+  billingCycle         BillingCycle? @map("billing_cycle")
+  currentPeriodEnd     DateTime?  @map("current_period_end")
+  cancelAtPeriodEnd    Boolean    @default(false) @map("cancel_at_period_end")
+  createdAt            DateTime   @default(now()) @map("created_at")
+  updatedAt            DateTime   @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("plans")
+}
+
+model ProfileView {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  timestamp DateTime @default(now())
+  referrer  String?
+  country   String?
+  path      String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, timestamp])
+  @@map("profile_views")
+}
+
+model ProjectClick {
+  id        String   @id @default(cuid())
+  projectId String   @map("project_id")
+  timestamp DateTime @default(now())
+  referrer  String?
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, timestamp])
+  @@map("project_clicks")
+}
+
+// ─── Telegram Bot Models ───
+
+model TelegramBot {
+  id            String    @id @default(cuid())
+  name          String
+  botUsername   String    @unique @map("bot_username")
+  token         String    // Encrypted at rest via middleware
+  webhookSecret String    @map("webhook_secret")
+  handlerType   String    @map("handler_type")
+  isEnabled     Boolean   @default(true) @map("is_enabled")
+  config        Json?
+  lastPingAt    DateTime? @map("last_ping_at")
+  errorCount    Int       @default(0) @map("error_count")
+  userId        String    @map("user_id")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  user User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  logs TelegramBotLog[]
+
+  @@map("telegram_bots")
+}
+
+model TelegramBotLog {
+  id        String   @id @default(cuid())
+  botId     String   @map("bot_id")
+  event     String   // "message", "command", "error", "webhook_set"
+  payload   Json?
+  level     String   @default("info") // "info", "warn", "error"
+  createdAt DateTime @default(now()) @map("created_at")
+
+  bot TelegramBot @relation(fields: [botId], references: [id], onDelete: Cascade)
+
+  @@index([botId, createdAt])
+  @@map("telegram_bot_logs")
+}
+
+model TelegramChat {
+  id     String @id @default(cuid())
+  chatId String @unique @map("chat_id")
+  botId  String @map("bot_id")
+  userId String @map("user_id")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("telegram_chats")
 }
 
 // ─── Enums ───
@@ -127,4 +256,21 @@ enum NoteType {
   GENERAL
   ADR
   PROMPT
+}
+
+enum PlanType {
+  FREE
+  PRO
+}
+
+enum PlanStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELLED
+  UNPAID
+}
+
+enum BillingCycle {
+  MONTHLY
+  ANNUAL
 }

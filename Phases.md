@@ -1,7 +1,7 @@
 # TrackFlow — Development Phases
 
-> Last updated: 2026-03-22
-> Status: Phases 4–8 complete — Phase 9 (polish) in progress
+> Last updated: 2026-03-23
+> Status: Phases 4–10 mostly complete. Phase 11 Telegram bot system built. Pending: prisma generate (DLL locked by dev server), Vercel deploy, Slack/Discord integrations.
 
 ---
 
@@ -72,7 +72,7 @@
 > Goal: Per-project markdown notepad for ADRs, prompts, notes.
 
 - [x] Brain Prisma model (project relation, title, content, type)
-- [ ] Markdown editor component
+- [x] Markdown editor component (EditNoteDialog with type selector)
 - [x] Note CRUD server actions
 - [x] Note types: ADR, prompt, general note
 - [x] Note list sidebar within project detail
@@ -97,7 +97,7 @@
 - [x] Username slug system
 - [x] Public profile page (ISR, revalidate: 300)
 - [x] Profile header (avatar, name, bio, GitHub, tech pills)
-- [ ] Activity heatmap (52 weeks × 7 rows)
+- [x] Activity heatmap (52 weeks × 7 rows)
 - [x] Shipped projects grid
 - [x] Shipping streak counter
 - [x] OG image generation (next/og, 1200×630)
@@ -119,43 +119,33 @@
 ## Phase 9: Polish & Launch Prep
 > Goal: Production-ready quality.
 
-- [ ] Error boundaries + fallback UI
-- [ ] Loading skeletons (1.5s pulse animation)
-- [ ] Empty states (ghost cards with CTA)
-- [ ] Manual time & cost logging per project
-- [ ] SEO optimization (all pages)
+- [x] Error boundaries + fallback UI
+- [x] Loading skeletons (1.5s pulse animation)
+- [x] Empty states (ghost cards with CTA)
+- [x] Manual time & cost logging per project
+- [x] SEO optimization (all pages)
+- [x] Dashboard overview page (stat cards, project table, commit feed, deploy status)
+- [x] Pricing section on landing page (Free vs Pro comparison, FAQ)
 - [ ] Performance audit (Core Web Vitals)
 - [ ] Deploy to Vercel
-- [ ] Landing page
+- [x] Landing page
 
 ---
 
 ## Known Bugs & Issues
 > Tracked here. Fix before or during Phase 9.
 
-### BUG-01: Dashboard not accessible after login
-- **Problem**: After signing in, users cannot navigate to or see the dashboard. Routing or layout issue preventing access to `/projects` or the main dashboard view.
-- **Priority**: Critical — blocks entire app usage
-- **Likely cause**: Protected route middleware redirect logic, missing default redirect after OAuth callback, or dashboard layout not rendering
+### BUG-01: Dashboard not accessible after login — ✅ FIXED
+- **Fix**: Added `redirect("/login")` in dashboard layout, created `/overview` as the main dashboard page with stats, projects, commits, and activity data.
 
-### BUG-02: Client share pages lack useful information
-- **Problem**: The `/share/[token]` pages are too bare — not informative enough for clients to understand project status at a glance.
-- **Priority**: High — this is a key selling point for the freelancer persona
-- **Improvements needed**:
-  - [ ] Add project description section
-  - [ ] Show milestone progress (completed/total with progress bar)
-  - [ ] Show recent activity timeline (last 5–10 updates)
-  - [ ] Show tech stack with proper badge styling
-  - [ ] Add last updated timestamp
-  - [ ] Add current phase/stage indicator
-  - [ ] Better visual hierarchy — match BRANDBOOK spacious mode (24px card padding, 32px section gaps)
+### BUG-02: Client share pages lack useful information — ✅ FIXED
+- **Fix**: Added Milestone model, milestone progress bar, spacious layout (24px card padding, 32px section gaps), started/updated dates, tech stack badges, and better visual hierarchy.
 
-### BUG-03: Activity heatmap not implemented
-- **Problem**: Public profile heatmap (52 weeks × 7 rows) is still missing.
-- **Priority**: Medium — important for the viral profile feature
+### BUG-03: Activity heatmap not implemented — ✅ FIXED
+- **Fix**: Created `ActivityHeatmap` component (52 weeks × 7 rows) with BRANDBOOK accent colors, integrated into public profile via GitHub activity data.
 
-### BUG-04: Markdown editor missing
-- **Problem**: Project brain note editor is not built yet. Notes can be created via server actions but there's no proper editing UI.
+### BUG-04: Markdown editor missing — ✅ FIXED
+- **Fix**: Created `EditNoteDialog` component with type selector, wired edit/delete buttons in PromptCard, AdrCard, and NoteCard.
 - **Priority**: Medium — core feature for vibe coder persona
 
 ---
@@ -188,20 +178,20 @@
 > Pricing is tentative. Validate with early users before locking in.
 
 ### 10.2 Stripe & billing implementation
-- [ ] Plan Prisma model (User → Plan relation, plan type, billing cycle, status)
-- [ ] Stripe integration (Checkout, Customer Portal, webhook handler)
-- [ ] Plan gate middleware (check user plan before accessing Pro features)
-- [ ] Free tier limits enforcement (project count, notes count, share link count)
-- [ ] Upgrade prompt UI — subtle, non-annoying, shown when user hits a limit
-- [ ] Settings → Billing page (current plan, usage, upgrade/downgrade, invoices)
-- [ ] Stripe webhook handler (subscription created, updated, cancelled, payment failed)
+- [x] Plan Prisma model (User → Plan relation, plan type, billing cycle, status)
+- [x] Stripe integration (Checkout, Customer Portal, webhook handler)
+- [x] Plan gate middleware (check user plan before accessing Pro features)
+- [x] Free tier limits enforcement (project count, notes count, share link count)
+- [x] Upgrade prompt UI — subtle, non-annoying, shown when user hits a limit
+- [x] Settings → Billing page (current plan, usage, upgrade/downgrade, invoices)
+- [x] Stripe webhook handler (subscription created, updated, cancelled, payment failed)
 - [ ] Graceful downgrade: when Pro expires, bot connections pause (not deleted), limits re-apply
 
 ### 10.3 Pricing page
-- [ ] Public pricing page (`/pricing`)
-- [ ] Comparison table (Free vs Pro)
-- [ ] FAQ section (can I cancel anytime, what happens to my data, etc.)
-- [ ] Annual discount option (2 months free)
+- [x] Public pricing page (`/pricing`)
+- [x] Comparison table (Free vs Pro)
+- [x] FAQ section (can I cancel anytime, what happens to my data, etc.)
+- [x] Annual discount option (2 months free)
 
 ### 10.4 Client portal + custom domain (Pro)
 - [ ] Custom domain Prisma model (domain, verification status, project relation)
@@ -211,24 +201,24 @@
 - [ ] SSL auto-provisioning via Vercel
 
 ### 10.5 Portfolio analytics (Pro)
-- [ ] Analytics Prisma models (ProfileView, ProjectClick — timestamp, referrer, country)
-- [ ] Lightweight tracking pixel/script on public profile (no third-party tracker)
-- [ ] Analytics dashboard page in settings: total views, unique visitors, top referrers, top projects by clicks
+- [x] Analytics Prisma models (ProfileView, ProjectClick — timestamp, referrer, country)
+- [x] Lightweight tracking pixel/script on public profile (no third-party tracker)
+- [x] Analytics dashboard page in settings: total views, unique visitors, top referrers, top projects by clicks
 - [ ] Time range filter (7d, 30d, 90d)
 - [ ] Weekly analytics email digest (optional, toggle in settings)
 
 ### 10.6 AI context generator (Pro)
-- [ ] "Export as context" button on project brain page
-- [ ] LLM-powered summarizer: takes all project notes (ADRs, prompts, architecture) and generates a single structured context block
-- [ ] Output formats: plain text (copy-paste), markdown file download, `.cursorrules` file format
-- [ ] Token count display (so user knows how much context window it'll consume)
+- [x] "Export as context" button on project brain page
+- [x] LLM-powered summarizer: takes all project notes (ADRs, prompts, architecture) and generates a single structured context block
+- [x] Output formats: plain text (copy-paste), markdown file download, `.cursorrules` file format
+- [x] Token count display (so user knows how much context window it'll consume)
 - [ ] Uses Claude Haiku to keep costs low — runs server-side via Anthropic API
 
 ### 10.7 Cross-project search (Pro)
-- [ ] Global search bar in dashboard header
-- [ ] Full-text search across all project brain notes, project names, descriptions
-- [ ] Search results grouped by project with highlighted matches
-- [ ] Keyboard shortcut: `Cmd+K` / `Ctrl+K` to open search
+- [x] Global search bar in dashboard header
+- [x] Full-text search across all project brain notes, project names, descriptions
+- [x] Search results grouped by project with highlighted matches
+- [x] Keyboard shortcut: `Cmd+K` / `Ctrl+K` to open search
 - [ ] Implementation: PostgreSQL full-text search (tsvector) — no external search service needed for MVP
 
 ---
@@ -238,19 +228,22 @@
 > **Requires Pro plan.** Free users see the feature in the UI but are prompted to upgrade.
 
 ### 11.1 Core bot infrastructure
-- [ ] Bot Prisma models (BotConnection, BotMessage, AutoTask)
-- [ ] Bot management page in dashboard (create, configure, delete bots per project)
-- [ ] Pro plan gate — check subscription status before bot creation
+- [x] Bot Prisma models (TelegramBot, TelegramBotLog, TelegramChat)
+- [x] Bot management page in dashboard (create, configure, delete bots per project)
+- [x] Pro plan gate — check subscription status before bot creation
 - [ ] LLM message classification layer (intent detection: task, bug, status query, general question)
 - [ ] Task auto-capture pipeline (message → classify → create todo with original context)
 - [ ] Developer approval workflow (bot drafts updates → developer reviews in dashboard → approved content becomes visible to clients)
 
 ### 11.2 Telegram integration
-- [ ] Telegram Bot API setup (programmatic bot creation via BotFather API)
-- [ ] "Project channel" concept — one Telegram group per project, bot joins and listens for @mentions
-- [ ] Message ingestion: when developer is tagged, bot classifies intent and routes accordingly
-- [ ] Status response: client asks about project status → bot serves last developer-approved report
-- [ ] Task creation: client requests feature/reports bug → bot creates todo item with full message context
+- [x] Telegram Bot API setup (grammY, webhook-based, dynamic route /api/telegram/[botId])
+- [x] Bot factory with handler registry (notification, project-updates, client-comms)
+- [x] Webhook security (X-Telegram-Bot-Api-Secret-Token, AES-256-GCM token encryption)
+- [x] Bot CRUD server actions (create, toggle, delete, rotate secret, re-register all)
+- [x] Admin UI (bot list, create dialog, status indicators, error counts)
+- [x] Outbound notification service (sendNotification, notifyUser, project status/milestone alerts)
+- [x] Circuit breaker (auto-disable after 50 consecutive errors)
+- [x] Three handler types: notification bot, project updates digest, client communication
 - [ ] Weekly digest: auto-generated summary sent to project channel (developer approves first)
 
 ### 11.3 Slack integration

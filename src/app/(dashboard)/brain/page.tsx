@@ -1,4 +1,7 @@
+import type { Metadata } from "next";
 import { getNotes, getUserProjects } from "@/actions/note";
+
+export const metadata: Metadata = { title: "Project brain" };
 import { CreateNoteDialog } from "@/components/project/brain/create-note-dialog";
 import { BrainView } from "@/components/project/brain/brain-view";
 

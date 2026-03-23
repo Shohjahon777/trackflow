@@ -39,7 +39,7 @@ export function CtaSection() {
         </h2>
         <p className="mt-4 text-[15px] leading-[1.7] text-text-secondary">
           Takes 30 seconds. Sign in with GitHub, and your repos are already
-          there. Free while in beta.
+          there. Free tier is generous. Pro is $9/mo when you need it.
         </p>
         <div className="mt-8 flex items-center justify-center gap-3">
           <Link href="/login">
@@ -48,9 +48,15 @@ export function CtaSection() {
               Get started free
             </Button>
           </Link>
+          <Link href="#pricing">
+            <Button variant="secondary" size="lg">
+              See pricing
+              <ArrowRight size={14} />
+            </Button>
+          </Link>
         </div>
         <p className="mt-4 text-[12px] text-text-tertiary">
-          No credit card. No setup. Just ship.
+          No credit card required. 5 projects free forever.
         </p>
       </div>
     </section>

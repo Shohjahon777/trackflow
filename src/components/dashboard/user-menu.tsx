@@ -44,11 +44,12 @@ export function UserMenu({ user }: UserMenuProps) {
           <p className="text-[12px] text-text-tertiary">{user.email}</p>
         </div>
         <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <Link href="/settings" className="flex items-center gap-2">
-            <Settings size={16} />
-            <span>Settings</span>
-          </Link>
+        <DropdownMenuItem
+          render={<Link href="/settings" />}
+          className="flex items-center gap-2"
+        >
+          <Settings size={16} />
+          <span>Settings</span>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem

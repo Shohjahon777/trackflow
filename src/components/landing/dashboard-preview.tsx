@@ -3,6 +3,7 @@
 import { useRef, useEffect, useState } from "react";
 import gsap from "gsap";
 import {
+  LayoutDashboard,
   FolderKanban,
   Brain,
   Activity,
@@ -135,8 +136,8 @@ export function DashboardPreview() {
         {/* Top bar */}
         <div className="flex h-[36px] items-center justify-between border-b border-border px-4">
           <div className="flex items-center gap-2">
-            <span className="text-[13px] font-medium text-text-primary">Projects</span>
-            <span className="rounded-full bg-accent-light px-1.5 py-0.5 font-mono text-[9px] text-accent">7 active</span>
+            <span className="text-[13px] font-medium text-text-primary">Overview</span>
+            <span className="rounded-full bg-accent-light px-1.5 py-0.5 font-mono text-[9px] text-accent">Command center</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="flex h-[22px] items-center gap-1 rounded-md border-[0.5px] border-border px-2 text-[9px] text-text-tertiary">
@@ -323,7 +324,8 @@ const sidebarNavSections = [
   {
     label: "Workspace",
     items: [
-      { label: "Projects", icon: FolderKanban, active: true, count: "7" },
+      { label: "Overview", icon: LayoutDashboard, active: true, count: null },
+      { label: "Projects", icon: FolderKanban, active: false, count: "7" },
       { label: "Brain", icon: Brain, active: false, count: "12" },
       { label: "Activity", icon: Activity, active: false, count: null },
       { label: "Shares", icon: Share2, active: false, count: "3" },

@@ -27,6 +27,16 @@ export const updateProfileSchema = z.object({
   bio: z.string().max(300).optional(),
 });
 
+export const createTimeLogSchema = z.object({
+  description: z.string().min(1, "Description is required").max(500),
+  hours: z.coerce.number().int().min(0).max(999),
+  minutes: z.coerce.number().int().min(0).max(59),
+  cost: z.coerce.number().min(0).optional().or(z.literal("")),
+  date: z.string().min(1, "Date is required"),
+  projectId: z.string().min(1, "Project is required"),
+});
+
 export type CreateProjectInput = z.infer<typeof createProjectSchema>;
 export type UpdateProjectInput = z.infer<typeof updateProjectSchema>;
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
+export type CreateTimeLogInput = z.infer<typeof createTimeLogSchema>;

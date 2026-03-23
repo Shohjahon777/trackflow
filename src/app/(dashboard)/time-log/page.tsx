@@ -1,23 +1,52 @@
+import type { Metadata } from "next";
 import { Clock } from "lucide-react";
-import { EmptyState } from "@/components/ui/empty-state";
 
-export default function TimeLogPage() {
+export const metadata: Metadata = { title: "Time log" };
+import { EmptyState } from "@/components/ui/empty-state";
+import { TimeLogView } from "@/components/time-log/time-log-view";
+import { LogTimeDialog } from "@/components/time-log/log-time-dialog";
+import { getTimeLogs, getTimeLogStats } from "@/actions/time-log";
+import { getProjects } from "@/actions/project";
+
+export default async function TimeLogPage() {
+  const [logs, stats, projects] = await Promise.all([
+    getTimeLogs(),
+    getTimeLogStats(),
+    getProjects(),
+  ]);
+
+  const hasProjects = projects.length > 0;
+
   return (
     <div className="mx-auto max-w-[1280px] space-y-6">
-      <div>
-        <h1 className="text-[24px] font-medium leading-[1.25] text-text-primary">
-          Time log
-        </h1>
-        <p className="mt-1 text-[14px] text-text-secondary">
-          Track time and costs across your projects.
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-[24px] font-medium leading-[1.25] text-text-primary">
+            Time log
+          </h1>
+          <p className="mt-1 text-[14px] text-text-secondary">
+            Track time and costs across your projects.
+          </p>
+        </div>
+        {hasProjects && (
+          <LogTimeDialog
+            projects={projects.map((p) => ({ id: p.id, name: p.name }))}
+          />
+        )}
       </div>
 
-      <EmptyState
-        icon={Clock}
-        title="Coming soon"
-        description="Manual time and cost logging will be available in a future update."
-      />
+      {!hasProjects ? (
+        <EmptyState
+          icon={Clock}
+          title="No projects yet"
+          description="Create a project first, then you can start logging time against it."
+        />
+      ) : (
+        <TimeLogView
+          logs={JSON.parse(JSON.stringify(logs))}
+          stats={stats}
+        />
+      )}
     </div>
   );
 }

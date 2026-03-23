@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { createProjectSchema, updateProjectSchema } from "@/lib/validations";
+import { checkLimit } from "@/lib/plan";
 
 export async function createProject(formData: FormData) {
   const session = await auth();
@@ -27,6 +28,17 @@ export async function createProject(formData: FormData) {
   const parsed = createProjectSchema.safeParse(raw);
   if (!parsed.success) {
     return { error: parsed.error.issues[0].message };
+  }
+
+  // Check plan limit
+  const projectCount = await db.project.count({
+    where: { userId: session.user.id },
+  });
+  const limit = await checkLimit(session.user.id, "projects", projectCount);
+  if (!limit.allowed) {
+    return {
+      error: `You've reached the limit of ${limit.limit} projects on the Free plan. Upgrade to Pro for unlimited projects.`,
+    };
   }
 
   // Check slug uniqueness for this user
@@ -53,6 +65,7 @@ export async function createProject(formData: FormData) {
   });
 
   revalidatePath("/projects");
+  revalidatePath("/overview");
   return { project };
 }
 
@@ -120,6 +133,7 @@ export async function updateProject(projectId: string, formData: FormData) {
   });
 
   revalidatePath("/projects");
+  revalidatePath("/overview");
   revalidatePath(`/projects/${projectId}`);
   return { project: updated };
 }
@@ -141,6 +155,7 @@ export async function deleteProject(projectId: string) {
   await db.project.delete({ where: { id: projectId } });
 
   revalidatePath("/projects");
+  revalidatePath("/overview");
   return { success: true };
 }
 

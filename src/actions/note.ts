@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { z } from "zod";
+import { checkLimit } from "@/lib/plan";
 
 const createNoteSchema = z.object({
   title: z.string().min(1, "Title is required").max(200),
@@ -39,6 +40,17 @@ export async function createNote(formData: FormData) {
 
   if (!project) {
     return { error: "Project not found" };
+  }
+
+  // Check plan limit for notes per project
+  const noteCount = await db.note.count({
+    where: { projectId: parsed.data.projectId },
+  });
+  const limit = await checkLimit(session.user.id, "notesPerProject", noteCount);
+  if (!limit.allowed) {
+    return {
+      error: `You've reached the limit of ${limit.limit} notes per project on the Free plan. Upgrade to Pro for unlimited notes.`,
+    };
   }
 
   const note = await db.note.create({

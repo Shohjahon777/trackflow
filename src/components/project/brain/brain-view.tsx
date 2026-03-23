@@ -92,6 +92,7 @@ export function BrainView({ notes }: { notes: NoteWithProject[] }) {
                   id: note.id,
                   title: note.title,
                   content: note.content,
+                  type: note.type,
                   tags: [],
                   usageCount: 0,
                   updatedAt: note.updatedAt,
@@ -120,6 +121,8 @@ export function BrainView({ notes }: { notes: NoteWithProject[] }) {
                 adr={{
                   id: note.id,
                   title: note.title,
+                  content: note.content,
+                  type: note.type,
                   status: "accepted",
                   context: note.content.split("\n")[0] || note.content,
                   decision: note.content.split("\n").slice(1).join("\n") || note.content,
@@ -150,6 +153,7 @@ export function BrainView({ notes }: { notes: NoteWithProject[] }) {
                   id: note.id,
                   title: note.title,
                   content: note.content,
+                  type: note.type,
                   updatedAt: note.updatedAt,
                 }}
               />

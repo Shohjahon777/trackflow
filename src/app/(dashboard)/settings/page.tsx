@@ -1,4 +1,7 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+
+export const metadata: Metadata = { title: "Settings" };
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { ProfileForm } from "@/components/settings/profile-form";

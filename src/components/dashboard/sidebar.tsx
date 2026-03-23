@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  LayoutDashboard,
   FolderKanban,
   Brain,
   Activity,
@@ -10,6 +11,9 @@ import {
   Clock,
   UserCircle,
   Settings,
+  CreditCard,
+  BarChart3,
+  Send,
   ChevronsLeft,
   ChevronsRight,
 } from "lucide-react";
@@ -25,17 +29,21 @@ const navSections = [
   {
     label: "Workspace",
     items: [
+      { href: "/overview", label: "Overview", icon: LayoutDashboard },
       { href: "/projects", label: "Projects", icon: FolderKanban },
       { href: "/brain", label: "Brain", icon: Brain },
       { href: "/activity", label: "Activity", icon: Activity },
       { href: "/shares", label: "Shares", icon: Share2 },
       { href: "/time-log", label: "Time log", icon: Clock },
+      { href: "/bots", label: "Bots", icon: Send },
     ],
   },
   {
     label: "Account",
     items: [
       { href: "/profile", label: "Profile", icon: UserCircle },
+      { href: "/analytics", label: "Analytics", icon: BarChart3 },
+      { href: "/billing", label: "Billing", icon: CreditCard },
       { href: "/settings", label: "Settings", icon: Settings },
     ],
   },
@@ -72,7 +80,7 @@ export function Sidebar({ collapsed, onToggle, user }: SidebarProps) {
         )}
       >
         {/* Logo */}
-        <Link href="/projects" className="flex items-center overflow-hidden">
+        <Link href="/overview" className="flex items-center overflow-hidden">
           <span className="font-mono text-[14px] font-medium whitespace-nowrap text-text-primary">
             {collapsed ? (
               <>T<span className="text-accent">F</span></>

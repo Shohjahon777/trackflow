@@ -1,7 +1,9 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { db } from "@/lib/db";
+import { getUserOctokit, getContributionData } from "@/lib/github";
 import { PublicProfile } from "@/components/profile/public-profile";
+import { ProfileTracker } from "@/components/profile/profile-tracker";
 
 export const revalidate = 300; // ISR: 5 minutes
 
@@ -95,8 +97,22 @@ export default async function ProfilePage({ params }: Props) {
   // Collect all unique techs
   const allTechs = [...new Set(user.projects.flatMap((p) => p.stack))];
 
+  // Fetch GitHub activity data for heatmap
+  let activity: { date: string; count: number }[] = [];
+  if (user.githubUsername) {
+    try {
+      const octokit = await getUserOctokit(user.id);
+      if (octokit) {
+        activity = await getContributionData(octokit, user.githubUsername);
+      }
+    } catch {
+      // Silently fail — heatmap just won't show
+    }
+  }
+
   return (
     <div className="min-h-screen bg-background">
+      <ProfileTracker userId={user.id} />
       <PublicProfile
         user={{
           name: user.name,
@@ -109,6 +125,7 @@ export default async function ProfilePage({ params }: Props) {
         projects={user.projects}
         streak={streak}
         techs={allTechs}
+        activity={activity}
       />
     </div>
   );

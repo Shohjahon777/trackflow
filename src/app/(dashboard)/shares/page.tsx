@@ -1,4 +1,7 @@
+import type { Metadata } from "next";
 import { Share2 } from "lucide-react";
+
+export const metadata: Metadata = { title: "Shares" };
 import { EmptyState } from "@/components/ui/empty-state";
 import { getSharedProjects } from "@/actions/share";
 import { getProjects } from "@/actions/project";

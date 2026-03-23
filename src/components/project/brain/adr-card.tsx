@@ -1,5 +1,11 @@
-import { GitPullRequest } from "lucide-react";
+"use client";
+
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { GitPullRequest, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { deleteNote } from "@/actions/note";
+import { EditNoteDialog } from "./edit-note-dialog";
 
 type AdrStatus = "proposed" | "accepted" | "deprecated";
 
@@ -7,6 +13,8 @@ type AdrCardProps = {
   adr: {
     id: string;
     title: string;
+    content: string;
+    type: string;
     status: AdrStatus;
     context: string;
     decision: string;
@@ -21,8 +29,22 @@ const statusVariant: Record<AdrStatus, "info" | "success" | "neutral"> = {
 };
 
 export function AdrCard({ adr }: AdrCardProps) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [isPending, startTransition] = useTransition();
+  const router = useRouter();
+
+  function handleDelete() {
+    if (!confirm("Delete this architecture decision?")) return;
+    setMenuOpen(false);
+    startTransition(async () => {
+      await deleteNote(adr.id);
+      router.refresh();
+    });
+  }
+
   return (
-    <div className="group flex flex-col gap-3 rounded-md border-[0.5px] border-border bg-background p-4 transition-colors duration-[120ms] hover:border-accent-muted">
+    <div className="group relative flex flex-col gap-3 rounded-md border-[0.5px] border-border bg-background p-4 transition-colors duration-[120ms] hover:border-accent-muted">
       {/* Header */}
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
@@ -33,7 +55,42 @@ export function AdrCard({ adr }: AdrCardProps) {
             {adr.title}
           </h3>
         </div>
-        <Badge variant={statusVariant[adr.status]}>{adr.status}</Badge>
+
+        <div className="flex items-center gap-1">
+          <Badge variant={statusVariant[adr.status]}>{adr.status}</Badge>
+
+          {/* More menu */}
+          <div className="relative">
+            <button
+              onClick={() => setMenuOpen(!menuOpen)}
+              className="flex size-[28px] items-center justify-center rounded-md text-ash opacity-0 transition-colors duration-[120ms] group-hover:opacity-100 hover:bg-surface-hover hover:text-text-secondary"
+            >
+              <MoreHorizontal size={14} strokeWidth={1.5} />
+            </button>
+            {menuOpen && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
+                <div className="absolute right-0 top-[32px] z-20 w-[140px] rounded-md border-[0.5px] border-border bg-background p-1 shadow-sm">
+                  <button
+                    onClick={() => { setMenuOpen(false); setEditOpen(true); }}
+                    className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-[13px] text-text-secondary transition-colors hover:bg-surface-hover hover:text-text-primary"
+                  >
+                    <Pencil size={13} strokeWidth={1.5} />
+                    Edit
+                  </button>
+                  <button
+                    onClick={handleDelete}
+                    disabled={isPending}
+                    className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-[13px] text-danger transition-colors hover:bg-danger-bg"
+                  >
+                    <Trash2 size={13} strokeWidth={1.5} />
+                    {isPending ? "Deleting..." : "Delete"}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Context */}
@@ -62,6 +119,12 @@ export function AdrCard({ adr }: AdrCardProps) {
           {adr.updatedAt.toLocaleDateString()}
         </span>
       </div>
+
+      <EditNoteDialog
+        note={{ id: adr.id, title: adr.title, content: adr.content, type: adr.type }}
+        open={editOpen}
+        onOpenChange={setEditOpen}
+      />
     </div>
   );
 }

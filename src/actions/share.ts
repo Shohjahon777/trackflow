@@ -4,6 +4,7 @@ import { randomBytes } from "crypto";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { checkLimit } from "@/lib/plan";
 
 export async function generateShareToken(projectId: string) {
   const session = await auth();
@@ -17,6 +18,19 @@ export async function generateShareToken(projectId: string) {
 
   if (!project) {
     return { error: "Project not found" };
+  }
+
+  // Check plan limit — free users get 1 share link per project (re-generating is fine)
+  if (!project.shareToken) {
+    const shareCount = await db.project.count({
+      where: { userId: session.user.id, shareToken: { not: null } },
+    });
+    const limit = await checkLimit(session.user.id, "shareLinksPerProject", shareCount);
+    if (!limit.allowed) {
+      return {
+        error: `You've reached the limit of ${limit.limit} share link on the Free plan. Upgrade to Pro for unlimited share links.`,
+      };
+    }
   }
 
   const token = randomBytes(24).toString("hex");
@@ -89,7 +103,17 @@ export async function getProjectByShareToken(token: string) {
       status: true,
       stack: true,
       deployUrl: true,
+      createdAt: true,
       updatedAt: true,
+      milestones: {
+        select: {
+          id: true,
+          title: true,
+          completed: true,
+          order: true,
+        },
+        orderBy: { order: "asc" },
+      },
       user: {
         select: { name: true, username: true, image: true },
       },

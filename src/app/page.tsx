@@ -1,12 +1,17 @@
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, LayoutDashboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Hero } from "@/components/landing/hero";
 import { FeatureSections } from "@/components/landing/feature-sections";
 import { Comparison } from "@/components/landing/comparison";
+import { PricingSection } from "@/components/landing/pricing-section";
 import { CtaSection } from "@/components/landing/cta-section";
+import { auth } from "@/lib/auth";
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const session = await auth();
+  const isLoggedIn = !!session?.user;
+
   return (
     <div className="flex min-h-screen flex-col bg-background">
       {/* Nav */}
@@ -15,15 +20,29 @@ export default function LandingPage() {
           TRACK<span className="text-accent">FLOW</span>
         </Link>
         <div className="flex items-center gap-3">
-          <Link href="/login">
-            <Button variant="ghost" size="sm">Sign in</Button>
-          </Link>
-          <Link href="/login">
-            <Button size="sm">
-              Get started
-              <ArrowRight size={14} />
-            </Button>
-          </Link>
+          <a href="#pricing" className="hidden text-[13px] text-text-secondary transition-colors hover:text-text-primary sm:block">
+            Pricing
+          </a>
+          {isLoggedIn ? (
+            <Link href="/overview">
+              <Button size="sm">
+                <LayoutDashboard size={14} />
+                Go to dashboard
+              </Button>
+            </Link>
+          ) : (
+            <>
+              <Link href="/login">
+                <Button variant="ghost" size="sm">Sign in</Button>
+              </Link>
+              <Link href="/login">
+                <Button size="sm">
+                  Get started
+                  <ArrowRight size={14} />
+                </Button>
+              </Link>
+            </>
+          )}
         </div>
       </header>
 
@@ -35,6 +54,9 @@ export default function LandingPage() {
 
       {/* Comparison table */}
       <Comparison />
+
+      {/* Pricing */}
+      <PricingSection />
 
       {/* Final CTA */}
       <CtaSection />

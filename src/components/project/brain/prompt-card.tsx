@@ -1,15 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Copy, Check, Terminal, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { deleteNote } from "@/actions/note";
+import { EditNoteDialog } from "./edit-note-dialog";
 
 type PromptCardProps = {
   prompt: {
     id: string;
     title: string;
     content: string;
+    type: string;
     tags: string[];
     usageCount: number;
     updatedAt: Date;
@@ -19,6 +23,18 @@ type PromptCardProps = {
 export function PromptCard({ prompt }: PromptCardProps) {
   const [copied, setCopied] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [isPending, startTransition] = useTransition();
+  const router = useRouter();
+
+  function handleDelete() {
+    if (!confirm("Delete this prompt?")) return;
+    setMenuOpen(false);
+    startTransition(async () => {
+      await deleteNote(prompt.id);
+      router.refresh();
+    });
+  }
 
   async function handleCopy() {
     await navigator.clipboard.writeText(prompt.content);
@@ -69,13 +85,20 @@ export function PromptCard({ prompt }: PromptCardProps) {
               <>
                 <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
                 <div className="absolute right-0 top-[32px] z-20 w-[140px] rounded-md border-[0.5px] border-border bg-background p-1 shadow-sm">
-                  <button className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-[13px] text-text-secondary transition-colors hover:bg-surface-hover hover:text-text-primary">
+                  <button
+                    onClick={() => { setMenuOpen(false); setEditOpen(true); }}
+                    className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-[13px] text-text-secondary transition-colors hover:bg-surface-hover hover:text-text-primary"
+                  >
                     <Pencil size={13} strokeWidth={1.5} />
                     Edit
                   </button>
-                  <button className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-[13px] text-danger transition-colors hover:bg-danger-bg">
+                  <button
+                    onClick={handleDelete}
+                    disabled={isPending}
+                    className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-[13px] text-danger transition-colors hover:bg-danger-bg"
+                  >
                     <Trash2 size={13} strokeWidth={1.5} />
-                    Delete
+                    {isPending ? "Deleting..." : "Delete"}
                   </button>
                 </div>
               </>
@@ -120,6 +143,11 @@ export function PromptCard({ prompt }: PromptCardProps) {
           <span className="font-mono">{prompt.updatedAt.toLocaleDateString()}</span>
         </div>
       </div>
+      <EditNoteDialog
+        note={{ id: prompt.id, title: prompt.title, content: prompt.content, type: prompt.type }}
+        open={editOpen}
+        onOpenChange={setEditOpen}
+      />
     </div>
   );
 }

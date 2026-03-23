@@ -1,4 +1,7 @@
+import type { Metadata } from "next";
 import { auth } from "@/lib/auth";
+
+export const metadata: Metadata = { title: "Profile" };
 import { db } from "@/lib/db";
 import Link from "next/link";
 import { ExternalLink } from "lucide-react";

@@ -7,6 +7,7 @@ import {
   Calendar,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { ActivityHeatmap } from "@/components/profile/activity-heatmap";
 import type { ProjectStatus } from "@prisma/client";
 
 const statusVariant: Record<string, "success" | "info"> = {
@@ -35,11 +36,17 @@ type ProfileProject = {
   updatedAt: Date;
 };
 
+type ActivityDay = {
+  date: string;
+  count: number;
+};
+
 type PublicProfileProps = {
   user: ProfileUser;
   projects: ProfileProject[];
   streak: number;
   techs: string[];
+  activity?: ActivityDay[];
 };
 
 export function PublicProfile({
@@ -47,6 +54,7 @@ export function PublicProfile({
   projects,
   streak,
   techs,
+  activity = [],
 }: PublicProfileProps) {
   const displayName = user.name ?? user.username;
   const memberSince = user.createdAt.toLocaleDateString("en-US", {
@@ -147,6 +155,13 @@ export function PublicProfile({
               </Badge>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Activity heatmap */}
+      {activity.length > 0 && (
+        <div className="mt-8">
+          <ActivityHeatmap data={activity} />
         </div>
       )}
 

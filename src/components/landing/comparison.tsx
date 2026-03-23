@@ -14,8 +14,11 @@ const rows = [
   { feature: "Public dev profile", trackflow: true, notion: false, linear: false, github: true },
   { feature: "Architecture decision records", trackflow: true, notion: true, linear: false, github: false },
   { feature: "Activity heatmap", trackflow: true, notion: false, linear: false, github: true },
+  { feature: "Time & cost tracking", trackflow: true, notion: false, linear: true, github: false },
+  { feature: "Bot assistants (Pro)", trackflow: true, notion: false, linear: false, github: false },
+  { feature: "AI context generator (Pro)", trackflow: true, notion: false, linear: false, github: false },
   { feature: "Built for solo builders", trackflow: true, notion: false, linear: false, github: false },
-  { feature: "Zero configuration", trackflow: true, notion: false, linear: false, github: true },
+  { feature: "Free tier — no credit card", trackflow: true, notion: true, linear: true, github: true },
 ];
 
 export function Comparison() {

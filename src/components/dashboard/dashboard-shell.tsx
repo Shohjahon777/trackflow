@@ -14,9 +14,11 @@ type SessionUser = {
 export function DashboardShell({
   children,
   user,
+  isPro = false,
 }: {
   children: React.ReactNode;
   user?: SessionUser;
+  isPro?: boolean;
 }) {
   const [collapsed, setCollapsed] = useState(false);
 
@@ -28,7 +30,7 @@ export function DashboardShell({
         user={user}
       />
       <div className="flex flex-1 flex-col overflow-hidden transition-all duration-200">
-        <TopNav user={user} />
+        <TopNav user={user} isPro={isPro} />
         <main className="flex-1 overflow-y-auto p-4">{children}</main>
       </div>
     </div>

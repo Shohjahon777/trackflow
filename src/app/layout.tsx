@@ -17,11 +17,45 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "TrackFlow",
+    default: "TrackFlow — One dashboard for everything you ship",
     template: "%s — TrackFlow",
   },
   description:
-    "The multi-project command center and developer identity platform for anyone who ships.",
+    "The multi-project command center and developer identity platform for solo builders. Manage projects, share progress with clients, and showcase your work with a public profile.",
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_APP_URL ?? "https://trackflow.dev"
+  ),
+  keywords: [
+    "project management",
+    "developer portfolio",
+    "solo builder",
+    "freelancer tools",
+    "project dashboard",
+    "client share links",
+    "developer profile",
+    "shipping tracker",
+  ],
+  authors: [{ name: "TrackFlow" }],
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    siteName: "TrackFlow",
+    title: "TrackFlow — One dashboard for everything you ship",
+    description:
+      "Manage projects, share progress with clients, and showcase your work with a public profile.",
+    images: ["/api/og"],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "TrackFlow — One dashboard for everything you ship",
+    description:
+      "The multi-project command center for solo builders.",
+    images: ["/api/og"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({
