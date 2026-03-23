@@ -36,7 +36,19 @@ export const createTimeLogSchema = z.object({
   projectId: z.string().min(1, "Project is required"),
 });
 
+export const createTaskSchema = z.object({
+  title: z.string().min(1, "Task title is required").max(200),
+  description: z.string().max(2000).optional(),
+  status: z.enum(["TODO", "IN_PROGRESS", "DONE"]).default("TODO"),
+  priority: z.enum(["LOW", "MEDIUM", "HIGH"]).default("MEDIUM"),
+  dueDate: z.string().optional(),
+  projectId: z.string().min(1, "Project is required"),
+});
+
+export const updateTaskSchema = createTaskSchema.partial();
+
 export type CreateProjectInput = z.infer<typeof createProjectSchema>;
 export type UpdateProjectInput = z.infer<typeof updateProjectSchema>;
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
 export type CreateTimeLogInput = z.infer<typeof createTimeLogSchema>;
+export type CreateTaskInput = z.infer<typeof createTaskSchema>;

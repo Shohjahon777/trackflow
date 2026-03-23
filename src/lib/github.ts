@@ -82,6 +82,32 @@ export async function getRepoCommits(
   }
 }
 
+/**
+ * Parse a GitHub repo URL into owner/repo.
+ */
+function parseRepoUrl(url: string): { owner: string; repo: string } | null {
+  const match = url.match(/github\.com\/([^/]+)\/([^/.]+)/);
+  if (!match) return null;
+  return { owner: match[1], repo: match[2] };
+}
+
+/**
+ * Fetch recent commits for a specific project's repo.
+ */
+export async function getProjectCommits(
+  userId: string,
+  repoUrl: string,
+  limit = 10
+): Promise<GitHubCommit[]> {
+  const parsed = parseRepoUrl(repoUrl);
+  if (!parsed) return [];
+
+  const octokit = await getUserOctokit(userId);
+  if (!octokit) return [];
+
+  return getRepoCommits(octokit, parsed.owner, parsed.repo, limit);
+}
+
 export async function getContributionData(
   octokit: Octokit,
   username: string

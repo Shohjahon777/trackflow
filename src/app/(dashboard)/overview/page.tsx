@@ -13,12 +13,14 @@ export default async function OverviewPage() {
   const userId = session!.user!.id!;
 
   // Fetch all data in parallel
-  const [projects, notes, user, shareCount, noteCount] = await Promise.all([
-    // TODO: after `prisma generate`, add `include: { milestones: true }` and
-    // update milestonesDone/milestonesTotal below
+  const [projects, notes, user, shareCount, noteCount, openTaskCount] = await Promise.all([
     db.project.findMany({
       where: { userId },
       orderBy: { updatedAt: "desc" },
+      include: {
+        milestones: { select: { completed: true } },
+        _count: { select: { tasks: true } },
+      },
     }),
     db.note.findMany({
       where: { project: { userId } },
@@ -35,6 +37,9 @@ export default async function OverviewPage() {
     }),
     db.note.count({
       where: { project: { userId } },
+    }),
+    db.task.count({
+      where: { project: { userId }, status: { not: "DONE" } },
     }),
   ]);
 
@@ -136,6 +141,7 @@ export default async function OverviewPage() {
         notesCount: notes.length,
         sharedCount: sharedProjects.length,
       }}
+      openTasks={openTaskCount}
       projects={projects.slice(0, 6).map((p) => ({
         id: p.id,
         name: p.name,
@@ -143,8 +149,8 @@ export default async function OverviewPage() {
         stack: p.stack,
         deployUrl: p.deployUrl,
         updatedAt: p.updatedAt,
-        milestonesDone: 0,
-        milestonesTotal: 0,
+        milestonesDone: p.milestones.filter((m) => m.completed).length,
+        milestonesTotal: p.milestones.length,
       }))}
       recentCommits={recentCommits}
       recentNotes={notes.map((n) => ({

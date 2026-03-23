@@ -4,7 +4,6 @@ import Link from "next/link";
 import {
   FolderKanban,
   GitCommit,
-  Zap,
   Rocket,
   FileText,
   Share2,
@@ -78,6 +77,7 @@ type DashboardOverviewProps = {
     notesCount: number;
     sharedCount: number;
   };
+  openTasks: number;
   projects: OverviewProject[];
   recentCommits: RecentCommit[];
   recentNotes: RecentNote[];
@@ -96,6 +96,7 @@ export function DashboardOverview({
   isNewUser,
   onboarding,
   stats,
+  openTasks,
   projects,
   recentCommits,
   recentNotes,
@@ -146,10 +147,10 @@ export function DashboardOverview({
           icon={Rocket}
         />
         <StatCard
-          label="Ship streak"
-          value={`${stats.streak}d`}
-          sub={stats.streak > 7 ? "On fire" : "Keep shipping"}
-          icon={Zap}
+          label="Open tasks"
+          value={openTasks}
+          sub={openTasks === 0 ? "All caught up" : "Across all projects"}
+          icon={CheckCircle2}
         />
       </div>
 

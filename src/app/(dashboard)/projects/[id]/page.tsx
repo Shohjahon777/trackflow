@@ -4,14 +4,15 @@ import {
   ArrowLeft,
   ExternalLink,
   GitBranch,
-  Pencil,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { getProject } from "@/actions/project";
+import { getProjectCommits } from "@/lib/github";
 import { EditProjectDialog } from "@/components/project/edit-project-dialog";
 import { DeleteProjectButton } from "@/components/project/delete-project-button";
+import { ProjectTabs } from "@/components/project/project-tabs";
 import type { ProjectStatus } from "@prisma/client";
+import { auth } from "@/lib/auth";
 
 const statusVariant: Record<ProjectStatus, "success" | "info" | "warning" | "danger" | "neutral"> = {
   DEPLOYED: "success",
@@ -39,6 +40,17 @@ export default async function ProjectDetailPage({
 
   if (!project) {
     notFound();
+  }
+
+  // Fetch commits if repo is linked
+  const session = await auth();
+  let commits: { sha: string; message: string; date: string; url: string }[] = [];
+  if (project.repoUrl && session?.user?.id) {
+    try {
+      commits = await getProjectCommits(session.user.id, project.repoUrl, 10);
+    } catch {
+      // GitHub data is optional
+    }
   }
 
   return (
@@ -75,8 +87,8 @@ export default async function ProjectDetailPage({
         </div>
       </div>
 
-      {/* Meta */}
-      <div className="mt-6 flex flex-wrap gap-3">
+      {/* Meta row */}
+      <div className="mt-4 flex flex-wrap items-center gap-3">
         {project.stack.length > 0 && (
           <div className="flex flex-wrap gap-1">
             {project.stack.map((tech) => (
@@ -86,10 +98,6 @@ export default async function ProjectDetailPage({
             ))}
           </div>
         )}
-      </div>
-
-      {/* Links */}
-      <div className="mt-4 flex gap-4">
         {project.repoUrl && (
           <a
             href={project.repoUrl}
@@ -114,63 +122,53 @@ export default async function ProjectDetailPage({
         )}
       </div>
 
-      {/* Info grid */}
-      <div className="mt-8 grid grid-cols-3 gap-4">
-        <div className="rounded-md border-[0.5px] border-border bg-surface p-4">
-          <span className="text-[11px] font-medium uppercase tracking-[0.04em] text-text-tertiary">
-            Category
-          </span>
-          <p className="mt-1 text-[14px] font-medium text-text-primary">
-            {project.category.charAt(0) + project.category.slice(1).toLowerCase().replace("_", " ")}
-          </p>
-        </div>
-        <div className="rounded-md border-[0.5px] border-border bg-surface p-4">
-          <span className="text-[11px] font-medium uppercase tracking-[0.04em] text-text-tertiary">
-            Created
-          </span>
-          <p className="mt-1 font-mono text-[14px] text-text-primary">
-            {project.createdAt.toLocaleDateString()}
-          </p>
-        </div>
-        <div className="rounded-md border-[0.5px] border-border bg-surface p-4">
-          <span className="text-[11px] font-medium uppercase tracking-[0.04em] text-text-tertiary">
-            Last updated
-          </span>
-          <p className="mt-1 font-mono text-[14px] text-text-primary">
-            {project.updatedAt.toLocaleDateString()}
-          </p>
-        </div>
-      </div>
-
-      {/* Notes section placeholder */}
+      {/* Tabs */}
       <div className="mt-8">
-        <h2 className="text-[11px] font-medium uppercase tracking-[0.04em] text-text-tertiary">
-          Notes
-        </h2>
-        {project.notes.length === 0 ? (
-          <p className="mt-3 text-[14px] text-text-secondary">
-            No notes yet. Notes will be available in the Brain section.
-          </p>
-        ) : (
-          <div className="mt-3 space-y-2">
-            {project.notes.map((note) => (
-              <div
-                key={note.id}
-                className="rounded-md border-[0.5px] border-border p-3"
-              >
-                <div className="flex items-center gap-2">
-                  <span className="text-[13px] font-medium text-text-primary">
-                    {note.title}
-                  </span>
-                  <Badge variant="neutral">{note.type.toLowerCase()}</Badge>
-                </div>
-                <p className="mt-1 line-clamp-2 text-[12px] text-text-secondary">
-                  {note.content}
-                </p>
-              </div>
-            ))}
-          </div>
-        )}
+        <ProjectTabs
+          project={{
+            id: project.id,
+            name: project.name,
+            status: project.status,
+            description: project.description,
+            repoUrl: project.repoUrl,
+            deployUrl: project.deployUrl,
+            createdAt: project.createdAt,
+            updatedAt: project.updatedAt,
+          }}
+          tasks={project.tasks.map((t) => ({
+            id: t.id,
+            title: t.title,
+            description: t.description,
+            status: t.status,
+            priority: t.priority,
+            dueDate: t.dueDate,
+            order: t.order,
+            createdAt: t.createdAt,
+          }))}
+          milestones={project.milestones.map((m) => ({
+            id: m.id,
+            title: m.title,
+            description: m.description,
+            completed: m.completed,
+            dueDate: m.dueDate,
+            order: m.order,
+          }))}
+          timeLogs={project.timeLogs.map((t) => ({
+            id: t.id,
+            description: t.description,
+            duration: t.duration,
+            cost: t.cost,
+            date: t.date,
+          }))}
+          notes={project.notes.map((n) => ({
+            id: n.id,
+            title: n.title,
+            content: n.content,
+            type: n.type,
+            updatedAt: n.updatedAt,
+          }))}
+          commits={commits}
+        />
       </div>
     </div>
   );

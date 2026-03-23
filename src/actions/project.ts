@@ -179,6 +179,11 @@ export async function getProject(projectId: string) {
 
   return db.project.findFirst({
     where: { id: projectId, userId: session.user.id },
-    include: { notes: { orderBy: { updatedAt: "desc" } } },
+    include: {
+      notes: { orderBy: { updatedAt: "desc" } },
+      tasks: { orderBy: [{ status: "asc" }, { order: "asc" }] },
+      milestones: { orderBy: { order: "asc" } },
+      timeLogs: { orderBy: { date: "desc" }, take: 50 },
+    },
   });
 }
