@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 import { NextRequest } from "next/server";
 
-export const runtime = "edge";
+export const runtime = "nodejs";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
@@ -35,8 +35,6 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  // Edge runtime can't use Prisma directly, so we'll use a simpler approach
-  // In production, this would call an internal API endpoint
   return new ImageResponse(
     (
       <div
