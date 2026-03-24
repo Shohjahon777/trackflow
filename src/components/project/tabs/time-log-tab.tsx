@@ -3,7 +3,13 @@
 import { useRef, useTransition } from "react";
 import { Clock, Trash2, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 import { createTimeLog, deleteTimeLog } from "@/actions/time-log";
+
+type TaskRef = {
+  id: string;
+  title: string;
+};
 
 type TimeLogEntry = {
   id: string;
@@ -11,11 +17,13 @@ type TimeLogEntry = {
   duration: number;
   cost: unknown;
   date: Date;
+  task: TaskRef | null;
 };
 
 type TimeLogTabProps = {
   timeLogs: TimeLogEntry[];
   projectId: string;
+  tasks: { id: string; title: string }[];
 };
 
 function formatDuration(minutes: number): string {
@@ -34,18 +42,33 @@ function formatDate(date: Date): string {
   });
 }
 
-export function TimeLogTab({ timeLogs, projectId }: TimeLogTabProps) {
+export function TimeLogTab({ timeLogs, projectId, tasks }: TimeLogTabProps) {
   const [isPending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
 
   const totalMinutes = timeLogs.reduce((sum, t) => sum + t.duration, 0);
 
-  // This month's hours
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   const thisMonthMinutes = timeLogs
     .filter((t) => new Date(t.date) >= monthStart)
     .reduce((sum, t) => sum + t.duration, 0);
+
+  // Time per task summary
+  const timePerTask = new Map<string, { title: string; minutes: number }>();
+  for (const log of timeLogs) {
+    if (log.task) {
+      const existing = timePerTask.get(log.task.id);
+      if (existing) {
+        existing.minutes += log.duration;
+      } else {
+        timePerTask.set(log.task.id, { title: log.task.title, minutes: log.duration });
+      }
+    }
+  }
+  const taskSummary = Array.from(timePerTask.values()).sort(
+    (a, b) => b.minutes - a.minutes
+  );
 
   function handleSubmit(formData: FormData) {
     startTransition(async () => {
@@ -76,6 +99,27 @@ export function TimeLogTab({ timeLogs, projectId }: TimeLogTabProps) {
         </div>
       </div>
 
+      {/* Time per task */}
+      {taskSummary.length > 0 && (
+        <div className="rounded-md border-[0.5px] border-border bg-surface p-4">
+          <span className="text-[11px] font-medium uppercase tracking-[0.04em] text-text-tertiary">
+            Time per task
+          </span>
+          <div className="mt-2 space-y-1.5">
+            {taskSummary.map((entry) => (
+              <div key={entry.title} className="flex items-center justify-between">
+                <span className="truncate text-[13px] text-text-primary">
+                  {entry.title}
+                </span>
+                <span className="shrink-0 font-mono text-[13px] font-medium text-text-primary">
+                  {formatDuration(entry.minutes)}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Add time log */}
       <form ref={formRef} action={handleSubmit} className="space-y-2">
         <input type="hidden" name="projectId" value={projectId} />
@@ -95,7 +139,6 @@ export function TimeLogTab({ timeLogs, projectId }: TimeLogTabProps) {
             min="0"
             max="999"
             defaultValue="0"
-            placeholder="h"
             className="w-[56px] rounded-md border-[0.5px] border-border bg-surface px-2 py-2 text-center font-mono text-[13px] text-text-primary focus:outline-none"
           />
           <span className="text-[12px] text-text-tertiary">h</span>
@@ -105,10 +148,23 @@ export function TimeLogTab({ timeLogs, projectId }: TimeLogTabProps) {
             min="0"
             max="59"
             defaultValue="30"
-            placeholder="m"
             className="w-[56px] rounded-md border-[0.5px] border-border bg-surface px-2 py-2 text-center font-mono text-[13px] text-text-primary focus:outline-none"
           />
           <span className="text-[12px] text-text-tertiary">m</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <select
+            name="taskId"
+            defaultValue=""
+            className="flex-1 rounded-md border-[0.5px] border-border bg-surface px-3 py-2 text-[12px] text-text-secondary focus:outline-none"
+          >
+            <option value="">No task</option>
+            {tasks.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.title}
+              </option>
+            ))}
+          </select>
           <input
             name="date"
             type="date"
@@ -125,7 +181,7 @@ export function TimeLogTab({ timeLogs, projectId }: TimeLogTabProps) {
           <div
             key={entry.id}
             className={cn(
-              "group flex h-[40px] items-center gap-3 rounded-md border-[0.5px] border-border px-3 transition-colors hover:bg-surface",
+              "group flex min-h-[40px] items-center gap-3 rounded-md border-[0.5px] border-border px-3 py-1.5 transition-colors hover:bg-surface",
               isPending && "opacity-50"
             )}
           >
@@ -133,6 +189,9 @@ export function TimeLogTab({ timeLogs, projectId }: TimeLogTabProps) {
             <span className="min-w-0 flex-1 truncate text-[13px] text-text-primary">
               {entry.description}
             </span>
+            {entry.task && (
+              <Badge variant="neutral">{entry.task.title}</Badge>
+            )}
             <span className="shrink-0 font-mono text-[13px] font-medium text-text-primary">
               {formatDuration(entry.duration)}
             </span>
@@ -160,8 +219,8 @@ export function TimeLogTab({ timeLogs, projectId }: TimeLogTabProps) {
         <div className="flex flex-col items-center justify-center py-12 text-center">
           <Clock size={24} className="mb-2 text-text-tertiary" />
           <p className="text-[14px] text-text-secondary">No time logged yet</p>
-          <p className="text-[12px] text-text-tertiary">
-            Track your hours to understand how you spend your time.
+          <p className="mt-1 max-w-[340px] text-[12px] leading-[1.6] text-text-tertiary">
+            Log time manually above or use the pomodoro timer inside any task. Link entries to tasks to see time-per-task breakdowns.
           </p>
         </div>
       )}

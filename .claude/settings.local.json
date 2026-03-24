@@ -52,7 +52,24 @@
       "Bash(scoop bucket:*)",
       "WebFetch(domain:medium.com)",
       "WebFetch(domain:webcache.googleusercontent.com)",
-      "Bash(grep -E \"^\\\\.env$|^\\\\.env\\\\.local\" .gitignore)"
+      "Bash(grep -E \"^\\\\.env$|^\\\\.env\\\\.local\" .gitignore)",
+      "Bash(pnpm build:*)",
+      "Bash(grep -r 2c3a283f D:/soqqali/trackflow/node_modules/@prisma/ --include=*.js -l)",
+      "Bash(grep -r 2c3a283f D:/soqqali/trackflow/node_modules/.prisma/ --include=*.js -l)",
+      "Bash(grep -r 2c3a283f D:/soqqali/trackflow/.next/ --include=*.js -l)",
+      "Bash(npx next:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(find /d/soqqali/trackflow -type f -name \"*.tsx\" -path \"*/app/\\(dashboard\\)/projects/*\")",
+      "Bash(ls -la /d/soqqali/trackflow/src/app/\\\\\\(dashboard\\\\\\)/)",
+      "Bash(cat \"/d/soqqali/trackflow/src/app/\\(dashboard\\)/projects/[id]/page.tsx\")",
+      "Bash(cat /d/soqqali/trackflow/src/app/\\\\\\(dashboard\\\\\\)/brain/page.tsx)",
+      "Bash(cat /d/soqqali/trackflow/src/app/\\\\\\(dashboard\\\\\\)/projects/[id]/page.tsx)",
+      "Bash(cat /d/soqqali/trackflow/src/app/\\\\\\(dashboard\\\\\\)/time-log/page.tsx)",
+      "Bash(cat /d/soqqali/trackflow/src/app/\\\\\\(dashboard\\\\\\)/activity/page.tsx)",
+      "Bash(ls \"D:/soqqali/trackflow/src/app/\\(dashboard\\)/\")",
+      "Bash(cd:*)"
     ]
   }
 }

@@ -114,18 +114,21 @@ model Note {
 }
 
 model Task {
-  id          String       @id @default(cuid())
-  title       String
-  description String?      @db.Text
-  status      TaskStatus   @default(TODO)
-  priority    TaskPriority @default(MEDIUM)
-  dueDate     DateTime?    @map("due_date")
-  order       Int          @default(0)
-  projectId   String       @map("project_id")
-  createdAt   DateTime     @default(now()) @map("created_at")
-  updatedAt   DateTime     @updatedAt @map("updated_at")
+  id              String       @id @default(cuid())
+  title           String
+  description     String?      @db.Text
+  status          TaskStatus   @default(TODO)
+  priority        TaskPriority @default(MEDIUM)
+  dueDate         DateTime?    @map("due_date")
+  order           Int          @default(0)
+  pomodoroCount   Int          @default(0) @map("pomodoro_count")
+  pomodoroMinutes Int          @default(30) @map("pomodoro_minutes")
+  projectId       String       @map("project_id")
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
 
-  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  project  Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  timeLogs TimeLog[]
 
   @@map("tasks")
 }
@@ -152,10 +155,12 @@ model TimeLog {
   duration    Int      // duration in minutes
   cost        Decimal? @db.Decimal(10, 2)
   date        DateTime @default(now())
+  taskId      String?  @map("task_id")
   projectId   String   @map("project_id")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
+  task    Task?   @relation(fields: [taskId], references: [id], onDelete: SetNull)
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@map("time_logs")

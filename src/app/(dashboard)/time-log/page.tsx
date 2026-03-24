@@ -25,7 +25,7 @@ export default async function TimeLogPage() {
             Time log
           </h1>
           <p className="mt-1 text-[14px] text-text-secondary">
-            Track time and costs across your projects.
+            Know exactly where your hours go — per project, per task.
           </p>
         </div>
         {hasProjects && (

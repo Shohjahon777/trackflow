@@ -7,6 +7,7 @@ import {
   Flag,
   Clock,
   Brain,
+  Calendar,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { OverviewTab } from "./tabs/overview-tab";
@@ -14,7 +15,12 @@ import { TasksTab } from "./tabs/tasks-tab";
 import { MilestonesTab } from "./tabs/milestones-tab";
 import { TimeLogTab } from "./tabs/time-log-tab";
 import { BrainTab } from "./tabs/brain-tab";
+import { CalendarTab } from "./tabs/calendar-tab";
 import type { GitHubCommit } from "@/lib/github";
+
+type TaskTimeLog = {
+  duration: number;
+};
 
 type ProjectTabsProps = {
   project: {
@@ -36,6 +42,9 @@ type ProjectTabsProps = {
     dueDate: Date | null;
     order: number;
     createdAt: Date;
+    pomodoroCount: number;
+    pomodoroMinutes: number;
+    timeLogs: TaskTimeLog[];
   }[];
   milestones: {
     id: string;
@@ -51,6 +60,7 @@ type ProjectTabsProps = {
     duration: number;
     cost: unknown;
     date: Date;
+    task: { id: string; title: string } | null;
   }[];
   notes: {
     id: string;
@@ -67,6 +77,7 @@ const tabs = [
   { value: "tasks", label: "Tasks", icon: CheckSquare },
   { value: "milestones", label: "Milestones", icon: Flag },
   { value: "time", label: "Time log", icon: Clock },
+  { value: "calendar", label: "Calendar", icon: Calendar },
   { value: "brain", label: "Brain", icon: Brain },
 ] as const;
 
@@ -97,13 +108,13 @@ export function ProjectTabs({
   return (
     <div>
       {/* Tab bar */}
-      <div className="flex gap-1 rounded-md border-[0.5px] border-border bg-surface p-1">
+      <div className="flex gap-1 overflow-x-auto rounded-md border-[0.5px] border-border bg-surface p-1">
         {tabs.map((tab) => (
           <button
             key={tab.value}
             onClick={() => setActive(tab.value)}
             className={cn(
-              "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[12px] font-medium transition-colors duration-[120ms]",
+              "flex shrink-0 items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[12px] font-medium transition-colors duration-[120ms]",
               active === tab.value
                 ? "bg-accent-light text-accent"
                 : "text-text-secondary hover:text-text-primary"
@@ -144,7 +155,18 @@ export function ProjectTabs({
           <MilestonesTab milestones={milestones} projectId={project.id} />
         )}
         {active === "time" && (
-          <TimeLogTab timeLogs={timeLogs} projectId={project.id} />
+          <TimeLogTab
+            timeLogs={timeLogs}
+            projectId={project.id}
+            tasks={tasks.map((t) => ({ id: t.id, title: t.title }))}
+          />
+        )}
+        {active === "calendar" && (
+          <CalendarTab
+            tasks={tasks}
+            milestones={milestones}
+            timeLogs={timeLogs}
+          />
         )}
         {active === "brain" && (
           <BrainTab notes={notes} projectId={project.id} />

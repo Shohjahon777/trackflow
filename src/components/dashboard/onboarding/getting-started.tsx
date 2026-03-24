@@ -76,7 +76,7 @@ export function GettingStarted({ steps, username }: GettingStartedProps) {
     {
       id: "time",
       label: "Log your first hours",
-      description: "Track time on a project",
+      description: "See where your time goes — log manually or use the pomodoro timer in any task",
       href: "/time-log",
       icon: Clock,
       completed: steps.hasTimeLog,

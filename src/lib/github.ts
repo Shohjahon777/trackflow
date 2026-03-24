@@ -59,36 +59,135 @@ export async function getUserRepos(octokit: Octokit): Promise<GitHubRepo[]> {
   }));
 }
 
+export type RepoStatus = "ok" | "not_found" | "no_access" | "no_token" | "invalid_url" | "error";
+
+export type CommitsResult = {
+  commits: GitHubCommit[];
+  repoStatus: RepoStatus;
+};
+
+/**
+ * Silent repo check using raw fetch — avoids Octokit throwing
+ * errors that Next.js dev server logs even when caught.
+ * Returns HTTP status code or 0 on network failure.
+ */
+async function checkRepo(token: string, owner: string, repo: string): Promise<number> {
+  try {
+    const res = await fetch(`https://api.github.com/repos/${owner}/${repo}`, {
+      headers: {
+        Accept: "application/vnd.github+json",
+        Authorization: `Bearer ${token}`,
+      },
+      cache: "no-store",
+    });
+    return res.status;
+  } catch {
+    return 0;
+  }
+}
+
 export async function getRepoCommits(
   octokit: Octokit,
   owner: string,
   repo: string,
-  perPage = 10
-): Promise<GitHubCommit[]> {
+  perPage = 10,
+  token?: string
+): Promise<CommitsResult> {
+  // Pre-check with raw fetch if token is available
+  if (token) {
+    const status = await checkRepo(token, owner, repo);
+    if (status === 404) return { commits: [], repoStatus: "not_found" };
+    if (status === 403) return { commits: [], repoStatus: "no_access" };
+    if (status !== 200) return { commits: [], repoStatus: "error" };
+  }
+
   try {
     const { data } = await octokit.repos.listCommits({
       owner,
       repo,
       per_page: perPage,
     });
-    return data.map((c) => ({
-      sha: c.sha.slice(0, 7),
-      message: c.commit.message.split("\n")[0],
-      date: c.commit.author?.date ?? "",
-      url: c.html_url,
-    }));
+    return {
+      commits: data.map((c) => ({
+        sha: c.sha.slice(0, 7),
+        message: c.commit.message.split("\n")[0],
+        date: c.commit.author?.date ?? "",
+        url: c.html_url,
+      })),
+      repoStatus: "ok",
+    };
   } catch {
-    return [];
+    return { commits: [], repoStatus: "error" };
   }
 }
 
 /**
  * Parse a GitHub repo URL into owner/repo.
  */
-function parseRepoUrl(url: string): { owner: string; repo: string } | null {
+export function parseRepoUrl(url: string): { owner: string; repo: string } | null {
   const match = url.match(/github\.com\/([^/]+)\/([^/.]+)/);
   if (!match) return null;
   return { owner: match[1], repo: match[2] };
+}
+
+export type RepoValidationResult =
+  | { valid: true; fullName: string; isPrivate: boolean }
+  | { valid: false; reason: string; hint: string };
+
+/**
+ * Validate that a GitHub repo URL is accessible with the user's token.
+ * Returns a user-friendly error with fix instructions if not.
+ */
+export async function validateRepoAccess(
+  userId: string,
+  repoUrl: string
+): Promise<RepoValidationResult> {
+  const parsed = parseRepoUrl(repoUrl);
+  if (!parsed) {
+    return {
+      valid: false,
+      reason: "Invalid GitHub URL",
+      hint: "Use the format: https://github.com/owner/repo",
+    };
+  }
+
+  const octokit = await getUserOctokit(userId);
+  if (!octokit) {
+    return {
+      valid: false,
+      reason: "GitHub not connected",
+      hint: "Sign out and sign back in to connect your GitHub account.",
+    };
+  }
+
+  try {
+    const { data } = await octokit.repos.get({
+      owner: parsed.owner,
+      repo: parsed.repo,
+    });
+    return { valid: true, fullName: data.full_name, isPrivate: data.private };
+  } catch (err: unknown) {
+    const status = (err as { status?: number }).status;
+    if (status === 404) {
+      return {
+        valid: false,
+        reason: "Repository not found",
+        hint: `"${parsed.owner}/${parsed.repo}" doesn't exist or is private. If it's private, try signing out and back in to refresh your GitHub permissions.`,
+      };
+    }
+    if (status === 403) {
+      return {
+        valid: false,
+        reason: "Access denied",
+        hint: "Your GitHub token doesn't have permission. Sign out and back in to grant access.",
+      };
+    }
+    return {
+      valid: false,
+      reason: "Could not reach GitHub",
+      hint: "GitHub may be temporarily unavailable. Try again in a moment.",
+    };
+  }
 }
 
 /**
@@ -98,14 +197,15 @@ export async function getProjectCommits(
   userId: string,
   repoUrl: string,
   limit = 10
-): Promise<GitHubCommit[]> {
+): Promise<CommitsResult> {
   const parsed = parseRepoUrl(repoUrl);
-  if (!parsed) return [];
+  if (!parsed) return { commits: [], repoStatus: "invalid_url" };
 
-  const octokit = await getUserOctokit(userId);
-  if (!octokit) return [];
+  const token = await getGitHubToken(userId);
+  if (!token) return { commits: [], repoStatus: "no_token" };
 
-  return getRepoCommits(octokit, parsed.owner, parsed.repo, limit);
+  const octokit = createOctokit(token);
+  return getRepoCommits(octokit, parsed.owner, parsed.repo, limit, token);
 }
 
 export async function getContributionData(

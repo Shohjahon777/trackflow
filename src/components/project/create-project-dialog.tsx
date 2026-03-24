@@ -13,8 +13,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Plus } from "lucide-react";
-import { createProject } from "@/actions/project";
+import { Plus, AlertTriangle, CheckCircle2, Loader2 } from "lucide-react";
+import { createProject, checkRepoUrl } from "@/actions/project";
 
 function slugify(str: string) {
   return str
@@ -23,12 +23,19 @@ function slugify(str: string) {
     .replace(/^-|-$/g, "");
 }
 
+type RepoStatus = {
+  state: "idle" | "checking" | "valid" | "warning" | "error";
+  message?: string;
+  hint?: string;
+};
+
 export function CreateProjectDialog() {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [slugManual, setSlugManual] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [repoStatus, setRepoStatus] = useState<RepoStatus>({ state: "idle" });
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
 
@@ -44,6 +51,42 @@ export function CreateProjectDialog() {
     setSlug(value);
   }
 
+  async function handleRepoBlur(e: React.FocusEvent<HTMLInputElement>) {
+    const url = e.target.value.trim();
+    if (!url) {
+      setRepoStatus({ state: "idle" });
+      return;
+    }
+    if (!url.includes("github.com/")) {
+      setRepoStatus({
+        state: "error",
+        message: "Invalid GitHub URL",
+        hint: "Use the format: https://github.com/owner/repo",
+      });
+      return;
+    }
+
+    setRepoStatus({ state: "checking" });
+    const result = await checkRepoUrl(url);
+    if (result.valid) {
+      setRepoStatus({
+        state: result.isPrivate ? "warning" : "valid",
+        message: result.isPrivate
+          ? `Private repo: ${result.fullName}`
+          : `Connected: ${result.fullName}`,
+        hint: result.isPrivate
+          ? "Private repos work, but commits won't show if your token expires. Consider making it public."
+          : undefined,
+      });
+    } else {
+      setRepoStatus({
+        state: "error",
+        message: result.reason,
+        hint: result.hint,
+      });
+    }
+  }
+
   function handleSubmit(formData: FormData) {
     setError(null);
     startTransition(async () => {
@@ -55,13 +98,14 @@ export function CreateProjectDialog() {
         setName("");
         setSlug("");
         setSlugManual(false);
+        setRepoStatus({ state: "idle" });
         router.refresh();
       }
     });
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setRepoStatus({ state: "idle" }); }}>
       <DialogTrigger
         render={
           <Button>
@@ -131,15 +175,58 @@ export function CreateProjectDialog() {
               <Input
                 id="repoUrl"
                 name="repoUrl"
-                placeholder="https://github.com/..."
+                placeholder="https://github.com/owner/repo"
+                onBlur={handleRepoBlur}
               />
+              {repoStatus.state !== "idle" && (
+                <div className="mt-0.5">
+                  {repoStatus.state === "checking" && (
+                    <div className="flex items-center gap-1.5 text-[12px] text-text-secondary">
+                      <Loader2 size={12} className="animate-spin" />
+                      Checking repository...
+                    </div>
+                  )}
+                  {repoStatus.state === "valid" && (
+                    <div className="flex items-center gap-1.5 text-[12px] text-[#3D8B6E]">
+                      <CheckCircle2 size={12} strokeWidth={1.5} />
+                      {repoStatus.message}
+                    </div>
+                  )}
+                  {repoStatus.state === "warning" && (
+                    <div className="space-y-0.5">
+                      <div className="flex items-center gap-1.5 text-[12px] text-[#C4956A]">
+                        <AlertTriangle size={12} strokeWidth={1.5} />
+                        {repoStatus.message}
+                      </div>
+                      {repoStatus.hint && (
+                        <p className="pl-[18px] text-[11px] leading-[1.4] text-text-tertiary">
+                          {repoStatus.hint}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                  {repoStatus.state === "error" && (
+                    <div className="space-y-0.5">
+                      <div className="flex items-center gap-1.5 text-[12px] text-[#C26A6A]">
+                        <AlertTriangle size={12} strokeWidth={1.5} />
+                        {repoStatus.message}
+                      </div>
+                      {repoStatus.hint && (
+                        <p className="pl-[18px] text-[11px] leading-[1.4] text-text-tertiary">
+                          {repoStatus.hint}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="deployUrl">Deploy URL</Label>
               <Input
                 id="deployUrl"
                 name="deployUrl"
-                placeholder="https://..."
+                placeholder="https://myapp.vercel.app"
               />
             </div>
           </div>

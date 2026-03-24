@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { FileText, Terminal, GitPullRequest, Brain, ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { NoteReadingSheet } from "../brain/note-reading-sheet";
 
 type Note = {
   id: string;
@@ -36,6 +38,8 @@ function timeAgo(date: Date): string {
 }
 
 export function BrainTab({ notes, projectId }: BrainTabProps) {
+  const [selectedNote, setSelectedNote] = useState<Note | null>(null);
+
   return (
     <div className="space-y-4">
       {/* Link to full brain page */}
@@ -56,8 +60,8 @@ export function BrainTab({ notes, projectId }: BrainTabProps) {
         <div className="flex flex-col items-center justify-center py-12 text-center">
           <Brain size={24} className="mb-2 text-text-tertiary" />
           <p className="text-[14px] text-text-secondary">No notes yet</p>
-          <p className="text-[12px] text-text-tertiary">
-            Go to the Brain section to add notes, ADRs, and prompts.
+          <p className="mt-1 max-w-[320px] text-[12px] leading-[1.6] text-text-tertiary">
+            Go to the Brain section to add notes, architecture decisions, and saved prompts. Click any note to read its full content.
           </p>
         </div>
       ) : (
@@ -67,7 +71,8 @@ export function BrainTab({ notes, projectId }: BrainTabProps) {
             return (
               <div
                 key={note.id}
-                className="rounded-md border-[0.5px] border-border p-3 transition-colors hover:bg-surface"
+                className="cursor-pointer rounded-md border-[0.5px] border-border p-3 transition-colors hover:bg-surface"
+                onClick={() => setSelectedNote(note)}
               >
                 <div className="flex items-center gap-2">
                   <Icon size={14} className="shrink-0 text-text-tertiary" />
@@ -86,6 +91,14 @@ export function BrainTab({ notes, projectId }: BrainTabProps) {
             );
           })}
         </div>
+      )}
+
+      {selectedNote && (
+        <NoteReadingSheet
+          note={selectedNote}
+          open={!!selectedNote}
+          onOpenChange={(open) => { if (!open) setSelectedNote(null); }}
+        />
       )}
     </div>
   );

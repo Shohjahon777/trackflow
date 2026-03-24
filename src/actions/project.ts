@@ -5,6 +5,15 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { createProjectSchema, updateProjectSchema } from "@/lib/validations";
 import { checkLimit } from "@/lib/plan";
+import { validateRepoAccess, type RepoValidationResult } from "@/lib/github";
+
+export async function checkRepoUrl(repoUrl: string): Promise<RepoValidationResult> {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return { valid: false, reason: "Not authenticated", hint: "Please sign in first." };
+  }
+  return validateRepoAccess(session.user.id, repoUrl);
+}
 
 export async function createProject(formData: FormData) {
   const session = await auth();
@@ -96,9 +105,9 @@ export async function updateProject(projectId: string, formData: FormData) {
 
   if (name) raw.name = name;
   if (slug) raw.slug = slug;
-  if (description !== null) raw.description = description || undefined;
-  if (repoUrl !== null) raw.repoUrl = repoUrl || undefined;
-  if (deployUrl !== null) raw.deployUrl = deployUrl || undefined;
+  raw.description = description || "";
+  raw.repoUrl = repoUrl || "";
+  raw.deployUrl = deployUrl || "";
   if (stack) raw.stack = stack.split(",").map((s) => s.trim()).filter(Boolean);
   if (category) raw.category = category;
 
@@ -126,6 +135,7 @@ export async function updateProject(projectId: string, formData: FormData) {
     where: { id: projectId },
     data: {
       ...parsed.data,
+      description: parsed.data.description || null,
       repoUrl: parsed.data.repoUrl || null,
       deployUrl: parsed.data.deployUrl || null,
       ...(status ? { status: status as "ACTIVE" | "DEPLOYED" | "STALE" | "ARCHIVED" | "PAUSED" } : {}),
@@ -181,9 +191,22 @@ export async function getProject(projectId: string) {
     where: { id: projectId, userId: session.user.id },
     include: {
       notes: { orderBy: { updatedAt: "desc" } },
-      tasks: { orderBy: [{ status: "asc" }, { order: "asc" }] },
+      tasks: {
+        orderBy: [{ status: "asc" }, { order: "asc" }],
+        include: { timeLogs: { select: { duration: true } } },
+      },
       milestones: { orderBy: { order: "asc" } },
-      timeLogs: { orderBy: { date: "desc" }, take: 50 },
+      timeLogs: {
+        orderBy: { date: "desc" },
+        take: 50,
+        select: {
+          id: true,
+          description: true,
+          duration: true,
+          date: true,
+          task: { select: { id: true, title: true } },
+        },
+      },
     },
   });
 }

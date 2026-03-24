@@ -159,11 +159,9 @@ export function PublicProfile({
       )}
 
       {/* Activity heatmap */}
-      {activity.length > 0 && (
-        <div className="mt-8">
-          <ActivityHeatmap data={activity} />
-        </div>
-      )}
+      <div className="mt-8">
+        <ActivityHeatmap data={activity} />
+      </div>
 
       {/* Projects grid */}
       <div className="mt-8">

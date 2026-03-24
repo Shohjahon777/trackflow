@@ -7,6 +7,8 @@ import {
   getUserRepos,
   getRepoCommits,
   getContributionData,
+  getGitHubToken,
+  createOctokit,
   type GitHubRepo,
   type GitHubCommit,
 } from "@/lib/github";
@@ -28,13 +30,15 @@ export async function fetchRepoCommits(
   const session = await auth();
   if (!session?.user?.id) return [];
 
-  const octokit = await getUserOctokit(session.user.id);
-  if (!octokit) return [];
+  const token = await getGitHubToken(session.user.id);
+  if (!token) return [];
 
+  const octokit = createOctokit(token);
   const [owner, repo] = repoFullName.split("/");
   if (!owner || !repo) return [];
 
-  return getRepoCommits(octokit, owner, repo);
+  const result = await getRepoCommits(octokit, owner, repo, 10, token);
+  return result.commits;
 }
 
 export async function fetchActivityData(): Promise<
@@ -83,8 +87,10 @@ export async function detectStaleProjects() {
   const session = await auth();
   if (!session?.user?.id) return;
 
-  const octokit = await getUserOctokit(session.user.id);
-  if (!octokit) return;
+  const token = await getGitHubToken(session.user.id);
+  if (!token) return;
+
+  const octokit = createOctokit(token);
 
   const projects = await db.project.findMany({
     where: {
@@ -107,11 +113,11 @@ export async function detectStaleProjects() {
       if (!match) continue;
 
       const [, owner, repo] = match;
-      const commits = await getRepoCommits(octokit, owner, repo, 1);
+      const result = await getRepoCommits(octokit, owner, repo, 1, token);
 
       if (
-        commits.length === 0 ||
-        new Date(commits[0].date) < threeDaysAgo
+        result.commits.length === 0 ||
+        new Date(result.commits[0].date) < threeDaysAgo
       ) {
         await db.project.update({
           where: { id: project.id },

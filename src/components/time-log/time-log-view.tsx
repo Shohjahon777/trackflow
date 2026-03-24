@@ -182,7 +182,10 @@ export function TimeLogView({
       {grouped.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-md border-[0.5px] border-dashed border-border py-12 px-4 text-center">
           <p className="text-[14px] text-text-secondary">
-            No time entries yet. Click &quot;Log time&quot; to add your first entry.
+            No time entries yet
+          </p>
+          <p className="mt-2 max-w-[380px] text-[12px] leading-[1.6] text-text-tertiary">
+            Click &quot;Log time&quot; to add an entry, or use the pomodoro timer inside any task to auto-log sessions. Example: &quot;Built auth flow — 2h 30m&quot; linked to your login task.
           </p>
         </div>
       ) : (

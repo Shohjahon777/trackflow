@@ -14,6 +14,7 @@ import {
   Terminal,
   GitPullRequest,
   Brain,
+  AlertTriangle,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { WelcomeDialog } from "@/components/dashboard/onboarding/welcome-dialog";
@@ -34,9 +35,15 @@ type OverviewProject = {
   status: ProjectStatus;
   stack: string[];
   deployUrl: string | null;
+  repoUrl: string | null;
   updatedAt: Date;
   milestonesDone: number;
   milestonesTotal: number;
+  tasksDone: number;
+  tasksTotal: number;
+  totalMinutes: number;
+  weekActivity: number[];
+  repoWarning: string | null;
 };
 
 type RecentCommit = {
@@ -81,7 +88,7 @@ type DashboardOverviewProps = {
   projects: OverviewProject[];
   recentCommits: RecentCommit[];
   recentNotes: RecentNote[];
-  activityData: { date: string; count: number }[];
+  activityData?: { date: string; count: number }[];
 };
 
 const noteIcon: Record<NoteType, typeof FileText> = {
@@ -175,11 +182,14 @@ export function DashboardOverview({
 
             {/* Table header */}
             <div className="hidden items-center border-b border-border bg-surface/50 px-4 py-1.5 text-[10px] font-medium uppercase tracking-[0.04em] text-text-tertiary md:flex">
-              <span className="w-[30%]">Project</span>
-              <span className="w-[14%] text-center">Status</span>
-              <span className="w-[24%]">Stack</span>
-              <span className="w-[16%] text-center">Milestones</span>
-              <span className="w-[16%] text-center">Deploy</span>
+              <span className="w-[22%]">Project</span>
+              <span className="w-[10%] text-center">Status</span>
+              <span className="w-[18%]">Stack</span>
+              <span className="w-[10%] text-center">Tasks</span>
+              <span className="w-[10%] text-center">Time</span>
+              <span className="w-[14%] text-center">Activity (7d)</span>
+              <span className="w-[10%] text-center">Milestones</span>
+              <span className="w-[6%] text-center">Live</span>
             </div>
 
             {projects.length === 0 ? (
@@ -201,69 +211,93 @@ export function DashboardOverview({
                   {/* Mobile: stacked */}
                   <div className="flex w-full flex-col gap-1.5 md:hidden">
                     <div className="flex items-center justify-between">
-                      <span className="text-[13px] font-medium text-text-primary">
+                      <span className="flex items-center gap-1.5 text-[13px] font-medium text-text-primary">
                         {project.name}
+                        {project.repoWarning && (
+                          <span title={project.repoWarning}>
+                            <AlertTriangle size={12} className="text-[#C4956A]" strokeWidth={1.5} />
+                          </span>
+                        )}
                       </span>
                       <Badge variant={statusVariant[project.status]} className="text-[10px]">
                         {project.status.toLowerCase()}
                       </Badge>
                     </div>
-                    <div className="flex gap-1">
-                      {project.stack.slice(0, 3).map((t) => (
-                        <span
-                          key={t}
-                          className="rounded-sm bg-accent-light px-1.5 py-0.5 font-mono text-[10px] text-accent"
-                        >
-                          {t}
-                        </span>
-                      ))}
+                    {project.stack.length > 0 && (
+                      <div className="flex gap-1">
+                        {project.stack.slice(0, 3).map((t) => (
+                          <span
+                            key={t}
+                            className="rounded-sm bg-accent-light px-1.5 py-0.5 font-mono text-[10px] text-accent"
+                          >
+                            {t}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    <div className="flex items-center gap-3 text-[11px] text-text-tertiary">
+                      <span className="font-mono">{project.tasksDone}/{project.tasksTotal} tasks</span>
+                      {project.totalMinutes > 0 && (
+                        <span className="font-mono">{formatDuration(project.totalMinutes)}</span>
+                      )}
+                      <MiniSparkline data={project.weekActivity} />
                     </div>
                   </div>
 
                   {/* Desktop: table row */}
                   <div className="hidden w-full items-center md:flex">
-                    <div className="flex w-[30%] items-center gap-2">
-                      <span className={`size-[6px] rounded-full ${i === 0 ? "bg-accent" : "bg-ash"}`} />
-                      <span className="text-[13px] font-medium text-text-primary">
+                    <div className="flex w-[22%] items-center gap-2">
+                      <span className={`size-[6px] shrink-0 rounded-full ${i === 0 ? "bg-accent" : "bg-ash"}`} />
+                      <span className="truncate text-[13px] font-medium text-text-primary">
                         {project.name}
                       </span>
+                      {project.repoWarning && (
+                        <span title={project.repoWarning} className="shrink-0">
+                          <AlertTriangle size={12} className="text-[#C4956A]" strokeWidth={1.5} />
+                        </span>
+                      )}
                     </div>
-                    <span className="flex w-[14%] justify-center">
+                    <span className="flex w-[10%] justify-center">
                       <Badge variant={statusVariant[project.status]} className="text-[10px]">
                         {project.status.toLowerCase()}
                       </Badge>
                     </span>
-                    <div className="flex w-[24%] gap-1">
+                    <div className="flex w-[18%] gap-1 overflow-hidden">
                       {project.stack.slice(0, 3).map((t) => (
                         <span
                           key={t}
-                          className="rounded-sm bg-accent-light px-1.5 py-0.5 font-mono text-[10px] text-accent"
+                          className="shrink-0 rounded-sm bg-accent-light px-1.5 py-0.5 font-mono text-[10px] text-accent"
                         >
                           {t}
                         </span>
                       ))}
                     </div>
-                    <div className="flex w-[16%] items-center justify-center gap-1">
+                    <div className="flex w-[10%] items-center justify-center">
+                      <span className="font-mono text-[11px] text-text-secondary">
+                        {project.tasksDone}/{project.tasksTotal}
+                      </span>
+                    </div>
+                    <div className="flex w-[10%] items-center justify-center">
+                      <span className="font-mono text-[11px] text-text-secondary">
+                        {project.totalMinutes > 0 ? formatDuration(project.totalMinutes) : "—"}
+                      </span>
+                    </div>
+                    <div className="flex w-[14%] items-center justify-center gap-[2px]">
+                      <MiniSparkline data={project.weekActivity} />
+                    </div>
+                    <div className="flex w-[10%] items-center justify-center gap-1">
                       {project.milestonesTotal > 0 ? (
                         <>
                           <span className="font-mono text-[11px] text-text-secondary">
                             {project.milestonesDone}/{project.milestonesTotal}
                           </span>
-                          <div className="h-[4px] w-[40px] overflow-hidden rounded-full bg-fog dark:bg-surface-hover">
-                            <div
-                              className="h-full rounded-full bg-success"
-                              style={{
-                                width: `${(project.milestonesDone / project.milestonesTotal) * 100}%`,
-                              }}
-                            />
-                          </div>
                         </>
                       ) : (
                         <span className="text-[11px] text-text-tertiary">—</span>
                       )}
                     </div>
-                    <span className="flex w-[16%] justify-center">
-                      {project.deployUrl ? (
+                    <span className="flex w-[6%] justify-center">
+                      {project.deployUrl || project.status === "DEPLOYED" ? (
                         <CheckCircle2 size={14} className="text-success" strokeWidth={1.5} />
                       ) : (
                         <Circle size={14} className="text-ash" strokeWidth={1} />
@@ -375,47 +409,37 @@ export function DashboardOverview({
               </span>
             </div>
             <div className="px-4 py-3 space-y-2">
-              {projects.filter((p) => p.deployUrl).length === 0 ? (
+              {projects.filter((p) => p.deployUrl || p.status === "DEPLOYED").length === 0 ? (
                 <p className="text-center text-[12px] text-text-tertiary py-2">
                   No deployed projects yet.
                 </p>
               ) : (
                 projects
-                  .filter((p) => p.deployUrl)
+                  .filter((p) => p.deployUrl || p.status === "DEPLOYED")
                   .slice(0, 5)
                   .map((p) => (
                     <div key={p.id} className="flex items-center gap-2">
-                      <span className="size-[6px] rounded-full bg-success" />
+                      <span className={`size-[6px] rounded-full ${p.deployUrl ? "bg-success" : "bg-[#C4956A]"}`} />
                       <span className="flex-1 truncate text-[12px] text-text-secondary">
                         {p.name}
                       </span>
-                      <a
-                        href={p.deployUrl!}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-ash transition-colors hover:text-accent"
-                      >
-                        <ExternalLink size={12} />
-                      </a>
+                      {p.deployUrl ? (
+                        <a
+                          href={p.deployUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-ash transition-colors hover:text-accent"
+                        >
+                          <ExternalLink size={12} />
+                        </a>
+                      ) : (
+                        <span className="text-[10px] text-text-tertiary">no url</span>
+                      )}
                     </div>
                   ))
               )}
             </div>
           </div>
-
-          {/* Activity mini heatmap */}
-          {activityData.length > 0 && (
-            <div className="rounded-md border-[0.5px] border-border">
-              <div className="border-b border-border bg-surface px-4 py-2.5">
-                <span className="text-[11px] font-medium uppercase tracking-[0.04em] text-text-tertiary">
-                  Activity (30d)
-                </span>
-              </div>
-              <div className="px-4 py-3">
-                <MiniHeatmap data={activityData} />
-              </div>
-            </div>
-          )}
 
           {/* Quick links */}
           <div className="space-y-1">
@@ -477,45 +501,37 @@ function QuickLink({
   );
 }
 
-function MiniHeatmap({ data }: { data: { date: string; count: number }[] }) {
-  // Show last 30 days as a simple grid
-  const countMap = new Map(data.map((d) => [d.date, d.count]));
-  const days: { date: string; count: number }[] = [];
-  const today = new Date();
-
-  for (let i = 29; i >= 0; i--) {
-    const d = new Date(today);
-    d.setDate(d.getDate() - i);
-    const dateStr = d.toISOString().split("T")[0];
-    days.push({ date: dateStr, count: countMap.get(dateStr) ?? 0 });
-  }
-
-  const maxCount = Math.max(...days.map((d) => d.count), 1);
+function MiniSparkline({ data }: { data: number[] }) {
+  const max = Math.max(...data, 1);
+  const total = data.reduce((s, v) => s + v, 0);
 
   return (
-    <div className="flex gap-[2px]">
-      {days.map((day) => {
-        const intensity = day.count / maxCount;
-        return (
-          <div
-            key={day.date}
-            className="flex-1 rounded-[2px]"
-            style={{
-              height: 20,
-              backgroundColor:
-                day.count === 0
-                  ? "var(--fog)"
-                  : `rgba(99, 102, 160, ${0.2 + intensity * 0.8})`,
-            }}
-            title={`${day.date}: ${day.count}`}
-          />
-        );
-      })}
+    <div className="flex items-end gap-[2px]" title={`${total} actions this week`}>
+      {data.map((v, i) => (
+        <div
+          key={i}
+          className="w-[4px] rounded-[1px]"
+          style={{
+            height: v === 0 ? 3 : Math.max(4, (v / max) * 16),
+            backgroundColor: v === 0
+              ? "var(--color-border, #D4D4CE)"
+              : `rgba(99, 102, 160, ${0.35 + (v / max) * 0.65})`,
+          }}
+        />
+      ))}
     </div>
   );
 }
 
 /* ─── Utilities ─── */
+
+function formatDuration(minutes: number): string {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  if (h === 0) return `${m}m`;
+  if (m === 0) return `${h}h`;
+  return `${h}h${m}m`;
+}
 
 function timeAgo(date: Date): string {
   const seconds = Math.floor((Date.now() - date.getTime()) / 1000);

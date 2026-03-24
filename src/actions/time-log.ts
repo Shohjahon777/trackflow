@@ -18,6 +18,7 @@ export async function createTimeLog(formData: FormData) {
     cost: formData.get("cost") as string,
     date: formData.get("date") as string,
     projectId: formData.get("projectId") as string,
+    taskId: (formData.get("taskId") as string) || undefined,
   };
 
   const parsed = createTimeLogSchema.safeParse(raw);
@@ -51,10 +52,12 @@ export async function createTimeLog(formData: FormData) {
       cost: costValue,
       date: new Date(parsed.data.date),
       projectId: parsed.data.projectId,
+      taskId: parsed.data.taskId || null,
     },
   });
 
   revalidatePath("/time-log");
+  revalidatePath(`/projects/${parsed.data.projectId}`);
   return { timeLog };
 }
 

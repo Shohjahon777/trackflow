@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import {
   Circle,
   CircleDot,
@@ -11,6 +11,11 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createTask, toggleTaskStatus, deleteTask } from "@/actions/task";
+import { TaskDetailSheet } from "@/components/project/task-detail-sheet";
+
+type TaskTimeLog = {
+  duration: number;
+};
 
 type Task = {
   id: string;
@@ -20,6 +25,9 @@ type Task = {
   priority: string;
   dueDate: Date | null;
   order: number;
+  pomodoroCount: number;
+  pomodoroMinutes: number;
+  timeLogs: TaskTimeLog[];
 };
 
 type TasksTabProps = {
@@ -57,7 +65,13 @@ function formatDate(date: Date): string {
   });
 }
 
-function TaskRow({ task }: { task: Task }) {
+function TaskRow({
+  task,
+  onSelect,
+}: {
+  task: Task;
+  onSelect: (task: Task) => void;
+}) {
   const [isPending, startTransition] = useTransition();
   const Icon = statusIcon[task.status as keyof typeof statusIcon] ?? Circle;
 
@@ -69,7 +83,10 @@ function TaskRow({ task }: { task: Task }) {
       )}
     >
       <button
-        onClick={() => startTransition(async () => { await toggleTaskStatus(task.id); })}
+        onClick={(e) => {
+          e.stopPropagation();
+          startTransition(async () => { await toggleTaskStatus(task.id); });
+        }}
         className={cn(
           "shrink-0 transition-colors",
           statusColor[task.status as keyof typeof statusColor]
@@ -78,16 +95,18 @@ function TaskRow({ task }: { task: Task }) {
         <Icon size={16} strokeWidth={1.5} />
       </button>
 
-      <span
+      <button
+        onClick={() => onSelect(task)}
+        title="Click to open task details, edit, and start pomodoro timer"
         className={cn(
-          "min-w-0 flex-1 truncate text-[13px]",
+          "min-w-0 flex-1 truncate text-left text-[13px] transition-colors hover:text-accent",
           task.status === "DONE"
             ? "text-text-tertiary line-through"
             : "text-text-primary"
         )}
       >
         {task.title}
-      </span>
+      </button>
 
       {/* Priority dot */}
       <span
@@ -113,7 +132,10 @@ function TaskRow({ task }: { task: Task }) {
       )}
 
       <button
-        onClick={() => startTransition(async () => { await deleteTask(task.id); })}
+        onClick={(e) => {
+          e.stopPropagation();
+          startTransition(async () => { await deleteTask(task.id); });
+        }}
         className="shrink-0 text-text-tertiary opacity-0 transition-opacity hover:text-[#C26A6A] group-hover:opacity-100"
       >
         <Trash2 size={13} />
@@ -125,6 +147,7 @@ function TaskRow({ task }: { task: Task }) {
 export function TasksTab({ tasks, projectId }: TasksTabProps) {
   const [isPending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
   const todoTasks = tasks.filter((t) => t.status === "TODO");
   const inProgressTasks = tasks.filter((t) => t.status === "IN_PROGRESS");
@@ -139,6 +162,18 @@ export function TasksTab({ tasks, projectId }: TasksTabProps) {
 
   return (
     <div className="space-y-4">
+      {/* Task detail sheet */}
+      {selectedTask && (
+        <TaskDetailSheet
+          task={selectedTask}
+          projectId={projectId}
+          open={!!selectedTask}
+          onOpenChange={(open) => {
+            if (!open) setSelectedTask(null);
+          }}
+        />
+      )}
+
       {/* Add task input */}
       <form ref={formRef} action={handleSubmit}>
         <input type="hidden" name="projectId" value={projectId} />
@@ -177,7 +212,7 @@ export function TasksTab({ tasks, projectId }: TasksTabProps) {
           </h3>
           <div className="space-y-1">
             {inProgressTasks.map((task) => (
-              <TaskRow key={task.id} task={task} />
+              <TaskRow key={task.id} task={task} onSelect={setSelectedTask} />
             ))}
           </div>
         </div>
@@ -192,7 +227,7 @@ export function TasksTab({ tasks, projectId }: TasksTabProps) {
           </h3>
           <div className="space-y-1">
             {todoTasks.map((task) => (
-              <TaskRow key={task.id} task={task} />
+              <TaskRow key={task.id} task={task} onSelect={setSelectedTask} />
             ))}
           </div>
         </div>
@@ -207,7 +242,7 @@ export function TasksTab({ tasks, projectId }: TasksTabProps) {
           </h3>
           <div className="space-y-1">
             {doneTasks.map((task) => (
-              <TaskRow key={task.id} task={task} />
+              <TaskRow key={task.id} task={task} onSelect={setSelectedTask} />
             ))}
           </div>
         </div>
@@ -216,13 +251,18 @@ export function TasksTab({ tasks, projectId }: TasksTabProps) {
       {tasks.length === 0 && !isPending && (
         <div className="flex flex-col items-center justify-center py-12 text-center">
           <AlertCircle size={24} className="mb-2 text-text-tertiary" />
-          <p className="text-[14px] text-text-secondary">
-            No tasks yet
-          </p>
-          <p className="text-[12px] text-text-tertiary">
-            Add your first task above to start tracking your work.
+          <p className="text-[14px] text-text-secondary">No tasks yet</p>
+          <p className="mt-1 max-w-[320px] text-[12px] leading-[1.6] text-text-tertiary">
+            Add your first task above. Click any task to open its detail view where you can edit, set due dates, track time with a built-in pomodoro timer, and more.
           </p>
         </div>
+      )}
+
+      {/* Feature hint — shown once there are tasks */}
+      {tasks.length > 0 && tasks.length <= 3 && (
+        <p className="text-center text-[11px] text-text-tertiary">
+          Click any task to edit details, start a pomodoro timer, and track time
+        </p>
       )}
     </div>
   );

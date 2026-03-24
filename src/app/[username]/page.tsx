@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { db } from "@/lib/db";
 import { getUserOctokit, getContributionData } from "@/lib/github";
+import { getActivityData } from "@/actions/activity";
 import { PublicProfile } from "@/components/profile/public-profile";
 import { ProfileTracker } from "@/components/profile/profile-tracker";
 
@@ -97,18 +98,32 @@ export default async function ProfilePage({ params }: Props) {
   // Collect all unique techs
   const allTechs = [...new Set(user.projects.flatMap((p) => p.stack))];
 
-  // Fetch GitHub activity data for heatmap
-  let activity: { date: string; count: number }[] = [];
-  if (user.githubUsername) {
-    try {
-      const octokit = await getUserOctokit(user.id);
-      if (octokit) {
-        activity = await getContributionData(octokit, user.githubUsername);
+  // Fetch internal activity + GitHub activity and merge
+  const [internalActivity, githubActivity] = await Promise.all([
+    getActivityData(user.id),
+    (async () => {
+      if (!user.githubUsername) return [];
+      try {
+        const octokit = await getUserOctokit(user.id);
+        if (octokit) return await getContributionData(octokit, user.githubUsername);
+      } catch {
+        // GitHub data is optional
       }
-    } catch {
-      // Silently fail — heatmap just won't show
-    }
+      return [];
+    })(),
+  ]);
+
+  // Merge activity by date (additive)
+  const merged = new Map<string, number>();
+  for (const a of internalActivity) {
+    merged.set(a.date, (merged.get(a.date) ?? 0) + a.count);
   }
+  for (const a of githubActivity) {
+    merged.set(a.date, (merged.get(a.date) ?? 0) + a.count);
+  }
+  const activity = Array.from(merged.entries())
+    .map(([date, count]) => ({ date, count }))
+    .sort((a, b) => a.date.localeCompare(b.date));
 
   return (
     <div className="min-h-screen bg-background">

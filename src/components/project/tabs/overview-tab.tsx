@@ -6,6 +6,7 @@ import {
   Clock,
   GitCommit,
   ExternalLink,
+  Lightbulb,
 } from "lucide-react";
 import type { GitHubCommit } from "@/lib/github";
 
@@ -126,6 +127,22 @@ export function OverviewTab({
           </div>
         </div>
       </div>
+
+      {/* Quick start tips — shown for new projects */}
+      {totalTasks <= 2 && totalMinutes === 0 && (
+        <div className="rounded-md border-[0.5px] border-accent/20 bg-accent-light/30 p-4">
+          <div className="flex items-center gap-2">
+            <Lightbulb size={14} className="text-accent" />
+            <span className="text-[12px] font-medium text-accent">Getting started</span>
+          </div>
+          <ul className="mt-2 space-y-1 text-[12px] leading-[1.6] text-text-secondary">
+            <li><span className="text-text-primary">Tasks</span> — add tasks and click any task to edit, set priorities, due dates, and start a pomodoro timer</li>
+            <li><span className="text-text-primary">Time log</span> — log hours manually or let the pomodoro timer auto-log sessions to tasks</li>
+            <li><span className="text-text-primary">Brain</span> — save notes, architecture decisions, and reusable prompts. Click to read in full</li>
+            <li><span className="text-text-primary">Calendar</span> — see tasks, milestones, and time entries on a monthly calendar view</li>
+          </ul>
+        </div>
+      )}
 
       {/* Two column layout */}
       <div className="grid grid-cols-2 gap-6">

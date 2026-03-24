@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { getUserOctokit, getUserRepos, getContributionData } from "@/lib/github";
+import { getUserOctokit, getContributionData, getProjectCommits } from "@/lib/github";
+import { getActivityData } from "@/actions/activity";
 import { DashboardOverview } from "@/components/dashboard/overview/dashboard-overview";
 
 export const metadata: Metadata = {
@@ -19,6 +20,9 @@ export default async function OverviewPage() {
       orderBy: { updatedAt: "desc" },
       include: {
         milestones: { select: { completed: true } },
+        tasks: { select: { status: true, updatedAt: true } },
+        timeLogs: { select: { duration: true, date: true } },
+        notes: { select: { createdAt: true } },
         _count: { select: { tasks: true } },
       },
     }),
@@ -43,60 +47,65 @@ export default async function OverviewPage() {
     }),
   ]);
 
-  // GitHub data (non-blocking — gracefully degrade)
+  // GitHub data — fetch commits from project-linked repos
   let recentCommits: { sha: string; message: string; date: string; repo: string }[] = [];
   let weeklyCommitCount = 0;
-  let activityData: { date: string; count: number }[] = [];
+  const repoWarnings: Record<string, string> = {};
 
   try {
-    const octokit = await getUserOctokit(userId);
-    if (octokit && user?.githubUsername) {
-      const [repos, activity] = await Promise.all([
-        getUserRepos(octokit),
-        getContributionData(octokit, user.githubUsername),
-      ]);
-
-      activityData = activity;
-
-      // Get recent commits from top 3 most recently pushed repos
-      const topRepos = repos.slice(0, 3);
-      const commitPromises = topRepos.map(async (repo) => {
+    // Get commits from all projects that have a linked GitHub repo
+    const projectsWithRepo = projects.filter((p) => p.repoUrl);
+    if (projectsWithRepo.length > 0) {
+      const commitPromises = projectsWithRepo.slice(0, 5).map(async (p) => {
         try {
-          const { data } = await octokit.repos.listCommits({
-            owner: repo.full_name.split("/")[0],
-            repo: repo.name,
-            per_page: 5,
-          });
-          return data.map((c) => ({
-            sha: c.sha.slice(0, 7),
-            message: c.commit.message.split("\n")[0],
-            date: c.commit.author?.date ?? "",
-            repo: repo.name,
+          // Fetch enough commits to accurately count a full week (30 covers ~5 commits/day)
+          const result = await getProjectCommits(userId, p.repoUrl!, 30);
+
+          // Track repo issues per project
+          if (result.repoStatus === "not_found") {
+            repoWarnings[p.id] = "Repository not found or is private. Check the URL or sign out and back in to refresh permissions.";
+          } else if (result.repoStatus === "no_access") {
+            repoWarnings[p.id] = "Access denied to this repository. Sign out and back in to refresh GitHub permissions.";
+          } else if (result.repoStatus === "no_token") {
+            repoWarnings[p.id] = "GitHub not connected. Sign out and back in to link your GitHub account.";
+          } else if (result.repoStatus === "invalid_url") {
+            repoWarnings[p.id] = "Invalid GitHub URL. Edit the project to fix it.";
+          }
+
+          return result.commits.map((c) => ({
+            sha: c.sha,
+            message: c.message,
+            date: c.date,
+            repo: p.name,
           }));
         } catch {
           return [];
         }
       });
 
-      const allCommits = (await Promise.all(commitPromises)).flat();
-      recentCommits = allCommits
-        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-        .slice(0, 8);
+      const allCommits = (await Promise.all(commitPromises)).flat()
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-      // Count commits in last 7 days
+      // Sidebar: 5 most recent commits across all linked repos
+      recentCommits = allCommits.slice(0, 5);
+
+      // Stat: total commits from the last 7 days (from the 30 fetched per repo)
       const weekAgo = new Date();
       weekAgo.setDate(weekAgo.getDate() - 7);
       weeklyCommitCount = allCommits.filter(
-        (c) => new Date(c.date) >= weekAgo
+        (c) => c.date && new Date(c.date) >= weekAgo
       ).length;
     }
   } catch {
-    // GitHub data is optional
+    // GitHub data is optional — silently degrade
   }
+
+  // Internal activity for heatmap
+  const finalActivity = await getActivityData(userId);
 
   // Compute stats
   const activeProjects = projects.filter((p) => p.status === "ACTIVE" || p.status === "DEPLOYED");
-  const deployedProjects = projects.filter((p) => p.deployUrl);
+  const deployedProjects = projects.filter((p) => p.deployUrl || p.status === "DEPLOYED");
   const sharedProjects = projects.filter((p) => p.shareToken);
 
   // Streak: consecutive days with activity
@@ -122,7 +131,7 @@ export default async function OverviewPage() {
     hasProject: projects.length > 0,
     hasNote: noteCount > 0,
     hasShare: shareCount > 0,
-    hasTimeLog: false, // TODO: enable after prisma generate
+    hasTimeLog: await db.timeLog.count({ where: { project: { userId } } }).then((c) => c > 0),
     hasPublicProfile: !!user?.username && projects.length > 0,
   };
 
@@ -142,16 +151,42 @@ export default async function OverviewPage() {
         sharedCount: sharedProjects.length,
       }}
       openTasks={openTaskCount}
-      projects={projects.slice(0, 6).map((p) => ({
-        id: p.id,
-        name: p.name,
-        status: p.status,
-        stack: p.stack,
-        deployUrl: p.deployUrl,
-        updatedAt: p.updatedAt,
-        milestonesDone: p.milestones.filter((m) => m.completed).length,
-        milestonesTotal: p.milestones.length,
-      }))}
+      projects={projects.slice(0, 6).map((p) => {
+        // Compute 7-day activity sparkline per project
+        const now = new Date();
+        const weekActivity: number[] = Array(7).fill(0);
+        for (const t of p.tasks) {
+          if (t.status === "DONE") {
+            const daysAgo = Math.floor((now.getTime() - new Date(t.updatedAt).getTime()) / 86400000);
+            if (daysAgo >= 0 && daysAgo < 7) weekActivity[6 - daysAgo]++;
+          }
+        }
+        for (const l of p.timeLogs) {
+          const daysAgo = Math.floor((now.getTime() - new Date(l.date).getTime()) / 86400000);
+          if (daysAgo >= 0 && daysAgo < 7) weekActivity[6 - daysAgo]++;
+        }
+        for (const n of p.notes) {
+          const daysAgo = Math.floor((now.getTime() - new Date(n.createdAt).getTime()) / 86400000);
+          if (daysAgo >= 0 && daysAgo < 7) weekActivity[6 - daysAgo]++;
+        }
+
+        return {
+          id: p.id,
+          name: p.name,
+          status: p.status,
+          stack: p.stack,
+          deployUrl: p.deployUrl,
+          repoUrl: p.repoUrl,
+          updatedAt: p.updatedAt,
+          milestonesDone: p.milestones.filter((m) => m.completed).length,
+          milestonesTotal: p.milestones.length,
+          tasksDone: p.tasks.filter((t) => t.status === "DONE").length,
+          tasksTotal: p.tasks.length,
+          totalMinutes: p.timeLogs.reduce((sum, t) => sum + t.duration, 0),
+          weekActivity,
+          repoWarning: repoWarnings[p.id] ?? null,
+        };
+      })}
       recentCommits={recentCommits}
       recentNotes={notes.map((n) => ({
         id: n.id,
@@ -160,7 +195,7 @@ export default async function OverviewPage() {
         projectName: n.project.name,
         updatedAt: n.updatedAt,
       }))}
-      activityData={activityData}
+      activityData={finalActivity}
     />
   );
 }

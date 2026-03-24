@@ -34,6 +34,7 @@ export const createTimeLogSchema = z.object({
   cost: z.coerce.number().min(0).optional().or(z.literal("")),
   date: z.string().min(1, "Date is required"),
   projectId: z.string().min(1, "Project is required"),
+  taskId: z.string().optional(),
 });
 
 export const createTaskSchema = z.object({
@@ -45,7 +46,9 @@ export const createTaskSchema = z.object({
   projectId: z.string().min(1, "Project is required"),
 });
 
-export const updateTaskSchema = createTaskSchema.partial();
+export const updateTaskSchema = createTaskSchema.extend({
+  pomodoroMinutes: z.coerce.number().int().min(1).max(120).optional(),
+}).partial();
 
 export type CreateProjectInput = z.infer<typeof createProjectSchema>;
 export type UpdateProjectInput = z.infer<typeof updateProjectSchema>;
