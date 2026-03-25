@@ -6,6 +6,7 @@ import {
   Loader2,
   ExternalLink,
   CheckCircle2,
+  Lock,
 } from "lucide-react";
 import {
   Dialog,
@@ -28,17 +29,21 @@ type CreateBotDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   handlerTypes: HandlerInfo[];
+  existingBotCount: number;
 };
+
+const enabledHandlers = new Set(["notification"]);
 
 export function CreateBotDialog({
   open,
   onOpenChange,
   handlerTypes,
+  existingBotCount,
 }: CreateBotDialogProps) {
   const [step, setStep] = useState<"form" | "success">("form");
   const [name, setName] = useState("");
   const [token, setToken] = useState("");
-  const [handlerType, setHandlerType] = useState(handlerTypes[0]?.id ?? "notification");
+  const [handlerType, setHandlerType] = useState("notification");
   const [error, setError] = useState("");
   const [resultUsername, setResultUsername] = useState("");
   const [isPending, startTransition] = useTransition();
@@ -105,87 +110,115 @@ export function CreateBotDialog({
               </p>
             </DialogHeader>
 
-            <div className="mt-4 space-y-4">
-              {/* Name */}
-              <div>
-                <label className="text-[12px] font-medium text-text-secondary">
-                  Bot name
-                </label>
-                <Input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. Project notifier"
-                  className="mt-1"
-                />
-              </div>
-
-              {/* Token */}
-              <div>
-                <label className="text-[12px] font-medium text-text-secondary">
-                  Bot API token
-                </label>
-                <Input
-                  value={token}
-                  onChange={(e) => setToken(e.target.value)}
-                  placeholder="123456:ABC-DEF..."
-                  className="mt-1 font-mono text-[13px]"
-                  type="password"
-                />
-                <p className="mt-1 text-[11px] text-text-tertiary">
-                  From @BotFather → /newbot → copy the token
+            {existingBotCount >= 1 ? (
+              <div className="mt-4 rounded-md border-[0.5px] border-border bg-surface p-4 text-center">
+                <Lock size={16} className="mx-auto text-text-tertiary" strokeWidth={1.5} />
+                <p className="mt-2 text-[13px] font-medium text-text-primary">
+                  Bot limit reached
                 </p>
+                <p className="mt-1 text-[12px] text-text-secondary">
+                  Free and Pro accounts can have 1 bot. Delete your existing bot to create a new one.
+                </p>
+                <Button variant="outline" size="sm" onClick={handleClose} className="mt-4">
+                  Got it
+                </Button>
               </div>
+            ) : (
+              <>
+                <div className="mt-4 space-y-4">
+                  {/* Name */}
+                  <div>
+                    <label className="text-[12px] font-medium text-text-secondary">
+                      Bot name
+                    </label>
+                    <Input
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="e.g. Project notifier"
+                      className="mt-1"
+                    />
+                  </div>
 
-              {/* Handler type */}
-              <div>
-                <label className="text-[12px] font-medium text-text-secondary">
-                  Bot type
-                </label>
-                <div className="mt-2 space-y-2">
-                  {handlerTypes.map((h) => (
-                    <button
-                      key={h.id}
-                      onClick={() => setHandlerType(h.id)}
-                      className={`w-full rounded-md border-[0.5px] p-3 text-left transition-colors ${
-                        handlerType === h.id
-                          ? "border-accent/40 bg-accent-light/30"
-                          : "border-border hover:border-accent/20"
-                      }`}
-                    >
-                      <p className="text-[13px] font-medium text-text-primary">
-                        {h.name}
-                      </p>
-                      <p className="mt-0.5 text-[11px] text-text-secondary">
-                        {h.description}
-                      </p>
-                    </button>
-                  ))}
+                  {/* Token */}
+                  <div>
+                    <label className="text-[12px] font-medium text-text-secondary">
+                      Bot API token
+                    </label>
+                    <Input
+                      value={token}
+                      onChange={(e) => setToken(e.target.value)}
+                      placeholder="123456:ABC-DEF..."
+                      className="mt-1 font-mono text-[13px]"
+                      type="password"
+                    />
+                    <p className="mt-1 text-[11px] text-text-tertiary">
+                      From @BotFather → /newbot → copy the token
+                    </p>
+                  </div>
+
+                  {/* Handler type */}
+                  <div>
+                    <label className="text-[12px] font-medium text-text-secondary">
+                      Bot type
+                    </label>
+                    <div className="mt-2 space-y-2">
+                      {handlerTypes.map((h) => {
+                        const isEnabled = enabledHandlers.has(h.id);
+                        return (
+                          <button
+                            key={h.id}
+                            onClick={() => isEnabled && setHandlerType(h.id)}
+                            disabled={!isEnabled}
+                            className={`relative w-full rounded-md border-[0.5px] p-3 text-left transition-colors ${
+                              !isEnabled
+                                ? "cursor-not-allowed border-border opacity-50"
+                                : handlerType === h.id
+                                  ? "border-accent/40 bg-accent-light/30"
+                                  : "border-border hover:border-accent/20"
+                            }`}
+                          >
+                            <p className={`text-[13px] font-medium ${isEnabled ? "text-text-primary" : "text-text-tertiary"}`}>
+                              {h.name}
+                            </p>
+                            <p className={`mt-0.5 text-[11px] ${isEnabled ? "text-text-secondary" : "text-text-tertiary/70 blur-[1px]"}`}>
+                              {h.description}
+                            </p>
+                            {!isEnabled && (
+                              <span className="absolute right-3 top-3 rounded px-1.5 py-0.5 font-mono text-[9px] font-medium uppercase tracking-[0.06em] bg-surface-hover text-text-tertiary">
+                                Soon
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {error && (
+                    <p className="text-[12px] text-danger">{error}</p>
+                  )}
                 </div>
-              </div>
 
-              {error && (
-                <p className="text-[12px] text-danger">{error}</p>
-              )}
-            </div>
-
-            <div className="mt-6 flex items-center justify-end gap-2">
-              <Button variant="outline" size="sm" onClick={handleClose}>
-                Cancel
-              </Button>
-              <Button
-                size="sm"
-                onClick={handleSubmit}
-                disabled={isPending}
-                className="gap-1.5"
-              >
-                {isPending ? (
-                  <Loader2 size={14} className="animate-spin" />
-                ) : (
-                  <BotIcon size={14} />
-                )}
-                Connect bot
-              </Button>
-            </div>
+                <div className="mt-6 flex items-center justify-end gap-2">
+                  <Button variant="outline" size="sm" onClick={handleClose}>
+                    Cancel
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={handleSubmit}
+                    disabled={isPending}
+                    className="gap-1.5"
+                  >
+                    {isPending ? (
+                      <Loader2 size={14} className="animate-spin" />
+                    ) : (
+                      <BotIcon size={14} />
+                    )}
+                    Connect bot
+                  </Button>
+                </div>
+              </>
+            )}
           </>
         ) : (
           <>

@@ -52,7 +52,7 @@ export default async function ProfilePage({ params }: Props) {
       githubUsername: true,
       createdAt: true,
       projects: {
-        where: { status: { in: ["ACTIVE", "DEPLOYED"] } },
+        where: { status: { in: ["ACTIVE", "DEPLOYED"] }, showOnProfile: true },
         select: {
           id: true,
           name: true,

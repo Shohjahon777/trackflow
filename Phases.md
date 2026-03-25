@@ -1,7 +1,7 @@
 # TrackFlow — Development Phases
 
-> Last updated: 2026-03-23
-> Status: Phases 4–10 mostly complete. Phase 11 Telegram bot system built. Pending: prisma generate (DLL locked by dev server), Vercel deploy, Slack/Discord integrations.
+> Last updated: 2026-03-25
+> Status: Phases 1–9 complete. Phase 10 billing/analytics mostly done. Phase 11 Telegram notification bot live. Landing page updated. Pending: Vercel deploy, Slack/Discord integrations, some Pro features.
 
 ---
 
@@ -76,6 +76,8 @@
 - [x] Note CRUD server actions
 - [x] Note types: ADR, prompt, general note
 - [x] Note list sidebar within project detail
+- [x] Markdown editor with Write/Preview tabs (using `marked` library)
+- [x] Note reading sheet (full content view with rendered markdown)
 
 ---
 
@@ -83,11 +85,15 @@
 > Goal: Auto-pull repos, commits, activity from GitHub.
 
 - [x] Octokit setup with user's GitHub token
-- [x] Repo list + link to project
-- [x] Recent commits display per project
+- [x] Repo list + link to project (type: "all", visibility: "all" — includes private repos)
+- [x] Recent commits display per project (30 per repo for accurate weekly count)
 - [x] Activity data for heatmap (contribution graph)
 - [x] GitHub webhook handler for push events
 - [x] Auto-detect stale projects (>3 days no commit → warning badge)
+- [x] Silent repo error handling (raw fetch pre-check, user-friendly warnings)
+- [x] Real-time repo URL validation in Create/Edit dialogs (on blur)
+- [x] Stale token detection (`hasRepoScope()` check, warning banner on overview)
+- [x] Repo status warnings on project detail page and overview
 
 ---
 
@@ -102,6 +108,8 @@
 - [x] Shipping streak counter
 - [x] OG image generation (next/og, 1200×630)
 - [x] Meta tags for social sharing
+- [x] Project visibility toggle (`showOnProfile` field — users control which projects appear)
+- [x] Internal activity heatmap (tasks, time logs, notes — not just GitHub)
 
 ---
 
@@ -119,16 +127,25 @@
 ## Phase 9: Polish & Launch Prep
 > Goal: Production-ready quality.
 
-- [x] Error boundaries + fallback UI
+- [x] Error boundaries + fallback UI (branded 404, 500, global-error pages)
 - [x] Loading skeletons (1.5s pulse animation)
 - [x] Empty states (ghost cards with CTA)
-- [x] Manual time & cost logging per project
+- [x] Manual time & cost logging per project (with task linking)
 - [x] SEO optimization (all pages)
 - [x] Dashboard overview page (stat cards, project table, commit feed, deploy status)
-- [x] Pricing section on landing page (Free vs Pro comparison, FAQ)
+- [x] Pricing section on landing page (Free vs Pro comparison, FAQ) — hidden for now
 - [ ] Performance audit (Core Web Vitals)
 - [ ] Deploy to Vercel
-- [x] Landing page
+- [x] Landing page (GSAP animations, new feature sections: pomodoro, analytics, client sharing)
+- [x] "Coming soon" creative component for Activity and Bots pages
+- [x] Sidebar badges (Soon/Pro) for unimplemented features
+- [x] Merged redundant Profile/Settings pages into single Settings page
+- [x] Hidden Billing from sidebar (redirects to Settings)
+- [x] Task detail sheet (editable title, status, priority, due date, description)
+- [x] Pomodoro timer (per-task, localStorage persistence, browser notifications, fullscreen mode)
+- [x] Calendar tab (tasks, milestones, time logs on a monthly grid)
+- [x] Analytics dashboard for all users (views, clicks, referrers, visitor regions)
+- [x] Visitor geography tracking (Vercel `x-vercel-ip-country` header)
 
 ---
 
@@ -145,7 +162,7 @@
 - **Fix**: Created `ActivityHeatmap` component (52 weeks × 7 rows) with BRANDBOOK accent colors, integrated into public profile via GitHub activity data.
 
 ### BUG-04: Markdown editor missing — ✅ FIXED
-- **Fix**: Created `EditNoteDialog` component with type selector, wired edit/delete buttons in PromptCard, AdrCard, and NoteCard.
+- **Fix**: Created `MarkdownEditor` component with Write/Preview tabs using `marked` library. Integrated into create/edit note dialogs and note reading sheet. Prose styles match BRANDBOOK.
 - **Priority**: Medium — core feature for vibe coder persona
 
 ---
@@ -166,7 +183,7 @@
 | AI context generator (export brain → Cursor/Claude Code) | — | Yes |
 | GitHub integration | Yes | Yes |
 | Activity heatmap | Yes | Yes |
-| Portfolio analytics (profile views, clicks, referrers) | — | Yes |
+| Portfolio analytics (basic: views, clicks, referrers, regions) | Yes | Yes (+ trends, CTR, date ranges) |
 | Time & cost logging | Basic | Advanced (reports, PDF export) |
 | Bot assistants (Telegram, Slack, Discord) | — | Yes (1 bot per project) |
 | Weekly digest to clients | — | Yes |
@@ -200,12 +217,16 @@
 - [ ] Branded share page — replace TrackFlow branding with developer's own logo/colors
 - [ ] SSL auto-provisioning via Vercel
 
-### 10.5 Portfolio analytics (Pro)
+### 10.5 Portfolio analytics (free tier + Pro extras)
 - [x] Analytics Prisma models (ProfileView, ProjectClick — timestamp, referrer, country)
 - [x] Lightweight tracking pixel/script on public profile (no third-party tracker)
-- [x] Analytics dashboard page in settings: total views, unique visitors, top referrers, top projects by clicks
-- [ ] Time range filter (7d, 30d, 90d)
-- [ ] Weekly analytics email digest (optional, toggle in settings)
+- [x] Analytics dashboard visible to ALL users (views, clicks, referrers, top projects)
+- [x] Visitor geography tracking (country from Vercel `x-vercel-ip-country` header, `Intl.DisplayNames` for display)
+- [x] Daily profile views bar chart with hover tooltips
+- [x] Three-column grid: referrers, most clicked projects, visitor regions
+- [x] "Coming with Pro" section: click-through rates, trending periods, time-range comparison
+- [ ] Time range filter (7d, 30d, 90d) — Pro
+- [ ] Weekly analytics email digest (optional, toggle in settings) — Pro
 
 ### 10.6 AI context generator (Pro)
 - [x] "Export as context" button on project brain page
@@ -244,6 +265,9 @@
 - [x] Outbound notification service (sendNotification, notifyUser, project status/milestone alerts)
 - [x] Circuit breaker (auto-disable after 50 consecutive errors)
 - [x] Three handler types: notification bot, project updates digest, client communication
+- [x] Cached botInfo in database (avoids `bot.init()` API call on every webhook)
+- [x] 1 bot per user limit (server-side + UI enforcement)
+- [x] Only notification handler enabled; project-updates and client-comms marked "Soon" in UI
 - [ ] Weekly digest: auto-generated summary sent to project channel (developer approves first)
 
 ### 11.3 Slack integration

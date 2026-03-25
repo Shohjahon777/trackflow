@@ -14,7 +14,9 @@ export const createProjectSchema = z.object({
   category: z.enum(["PERSONAL", "CLIENT", "OPEN_SOURCE", "EXPERIMENT"]).default("PERSONAL"),
 });
 
-export const updateProjectSchema = createProjectSchema.partial();
+export const updateProjectSchema = createProjectSchema.extend({
+  showOnProfile: z.boolean().optional(),
+}).partial();
 
 export const updateProfileSchema = z.object({
   name: z.string().min(1).max(100).optional(),

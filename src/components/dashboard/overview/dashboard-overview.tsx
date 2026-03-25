@@ -89,6 +89,7 @@ type DashboardOverviewProps = {
   recentCommits: RecentCommit[];
   recentNotes: RecentNote[];
   activityData?: { date: string; count: number }[];
+  missingRepoScope?: boolean;
 };
 
 const noteIcon: Record<NoteType, typeof FileText> = {
@@ -108,6 +109,7 @@ export function DashboardOverview({
   recentCommits,
   recentNotes,
   activityData,
+  missingRepoScope,
 }: DashboardOverviewProps) {
   const allOnboardingDone = Object.values(onboarding).every(Boolean);
 
@@ -115,6 +117,19 @@ export function DashboardOverview({
     <div className="mx-auto max-w-[1280px] space-y-6">
       {/* Welcome dialog for brand-new users */}
       <WelcomeDialog userName={userName} open={isNewUser} />
+
+      {/* Stale token warning */}
+      {missingRepoScope && (
+        <div className="flex items-start gap-3 rounded-md border-[0.5px] border-[#C4956A]/30 bg-[#FBF3EB] px-4 py-3 dark:border-warning/20 dark:bg-warning/5">
+          <AlertTriangle size={16} className="mt-0.5 shrink-0 text-[#C4956A]" strokeWidth={1.5} />
+          <div>
+            <p className="text-[13px] font-medium text-[#C4956A]">Private repos not accessible</p>
+            <p className="mt-0.5 text-[12px] leading-[1.5] text-text-secondary">
+              Your GitHub token doesn&apos;t have permission to access private repositories. Sign out and sign back in to refresh your permissions.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Page header */}
       <div>

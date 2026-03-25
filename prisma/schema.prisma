@@ -83,8 +83,9 @@ model Project {
   deployUrl   String?       @map("deploy_url")
   stack       String[]      @default([])
   category    ProjectCategory @default(PERSONAL)
-  shareToken  String?       @unique @map("share_token")
-  userId      String        @map("user_id")
+  shareToken    String?       @unique @map("share_token")
+  showOnProfile Boolean       @default(true) @map("show_on_profile")
+  userId        String        @map("user_id")
   createdAt   DateTime      @default(now()) @map("created_at")
   updatedAt   DateTime      @updatedAt @map("updated_at")
 

@@ -34,6 +34,14 @@ export async function createTelegramBot(formData: FormData) {
     return { error: "Pro plan required for bot assistants" };
   }
 
+  // Limit: 1 bot per user
+  const botCount = await db.telegramBot.count({
+    where: { userId: session.user.id },
+  });
+  if (botCount >= 1) {
+    return { error: "You can have 1 bot per account. Delete the existing one to create a new one." };
+  }
+
   const raw = {
     name: formData.get("name") as string,
     token: formData.get("token") as string,
@@ -44,6 +52,11 @@ export async function createTelegramBot(formData: FormData) {
   const parsed = createBotSchema.safeParse(raw);
   if (!parsed.success) {
     return { error: parsed.error.issues[0].message };
+  }
+
+  // Only notification handler is available for now
+  if (parsed.data.handlerType !== "notification") {
+    return { error: "Only notification bots are available right now. Other types are coming soon." };
   }
 
   // Validate bot token with Telegram

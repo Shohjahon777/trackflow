@@ -213,6 +213,7 @@ export function TaskDetailSheet({
           <PomodoroTimer
             taskId={task.id}
             projectId={projectId}
+            taskName={task.title}
             durationMinutes={task.pomodoroMinutes}
             completedCount={task.pomodoroCount}
           />

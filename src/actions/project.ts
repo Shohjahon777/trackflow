@@ -103,6 +103,8 @@ export async function updateProject(projectId: string, formData: FormData) {
   const category = formData.get("category") as string;
   const status = formData.get("status") as string;
 
+  const showOnProfile = formData.get("showOnProfile");
+
   if (name) raw.name = name;
   if (slug) raw.slug = slug;
   raw.description = description || "";
@@ -110,6 +112,7 @@ export async function updateProject(projectId: string, formData: FormData) {
   raw.deployUrl = deployUrl || "";
   if (stack) raw.stack = stack.split(",").map((s) => s.trim()).filter(Boolean);
   if (category) raw.category = category;
+  if (showOnProfile !== null) raw.showOnProfile = showOnProfile === "true";
 
   const parsed = updateProjectSchema.safeParse(raw);
   if (!parsed.success) {
@@ -146,6 +149,31 @@ export async function updateProject(projectId: string, formData: FormData) {
   revalidatePath("/overview");
   revalidatePath(`/projects/${projectId}`);
   return { project: updated };
+}
+
+export async function toggleProfileVisibility(projectId: string) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return { error: "Not authenticated" };
+  }
+
+  const project = await db.project.findFirst({
+    where: { id: projectId, userId: session.user.id },
+    select: { showOnProfile: true },
+  });
+
+  if (!project) {
+    return { error: "Project not found" };
+  }
+
+  await db.project.update({
+    where: { id: projectId },
+    data: { showOnProfile: !project.showOnProfile },
+  });
+
+  revalidatePath(`/projects/${projectId}`);
+  revalidatePath("/projects");
+  return { showOnProfile: !project.showOnProfile };
 }
 
 export async function deleteProject(projectId: string) {

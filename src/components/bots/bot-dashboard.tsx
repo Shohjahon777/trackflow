@@ -91,10 +91,16 @@ export function BotDashboard({ bots, handlerTypes }: BotDashboardProps) {
               Re-register all
             </Button>
           )}
-          <Button size="sm" onClick={() => setCreateOpen(true)} className="gap-1.5">
-            <Plus size={14} />
-            Add bot
-          </Button>
+          {bots.length >= 1 ? (
+            <span className="rounded-md border-[0.5px] border-border bg-surface px-3 py-1.5 text-[11px] text-text-tertiary">
+              1/1 bot used
+            </span>
+          ) : (
+            <Button size="sm" onClick={() => setCreateOpen(true)} className="gap-1.5">
+              <Plus size={14} />
+              Add bot
+            </Button>
+          )}
         </div>
       </div>
 
@@ -130,6 +136,7 @@ export function BotDashboard({ bots, handlerTypes }: BotDashboardProps) {
         open={createOpen}
         onOpenChange={setCreateOpen}
         handlerTypes={handlerTypes}
+        existingBotCount={bots.length}
       />
     </div>
   );

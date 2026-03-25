@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { getUserOctokit, getContributionData, getProjectCommits } from "@/lib/github";
+import { getUserOctokit, getContributionData, getProjectCommits, hasRepoScope } from "@/lib/github";
 import { getActivityData } from "@/actions/activity";
 import { DashboardOverview } from "@/components/dashboard/overview/dashboard-overview";
 
@@ -100,6 +100,17 @@ export default async function OverviewPage() {
     // GitHub data is optional — silently degrade
   }
 
+  // Check if token has repo scope (for private repo access)
+  let missingRepoScope = false;
+  try {
+    const octokit = await getUserOctokit(userId);
+    if (octokit) {
+      missingRepoScope = !(await hasRepoScope(octokit));
+    }
+  } catch {
+    // Non-critical
+  }
+
   // Internal activity for heatmap
   const finalActivity = await getActivityData(userId);
 
@@ -196,6 +207,7 @@ export default async function OverviewPage() {
         updatedAt: n.updatedAt,
       }))}
       activityData={finalActivity}
+      missingRepoScope={missingRepoScope}
     />
   );
 }

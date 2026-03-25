@@ -39,11 +39,29 @@ export type GitHubCommit = {
   url: string;
 };
 
+/**
+ * Check if the stored OAuth token has the `repo` scope (private repo access).
+ * Returns false if the token only has public access (stale token from before scope was added).
+ */
+export async function hasRepoScope(octokit: Octokit): Promise<boolean> {
+  try {
+    const { headers } = await octokit.repos.listForAuthenticatedUser({
+      per_page: 1,
+    });
+    // GitHub returns x-oauth-scopes header with the granted scopes
+    const scopes = headers["x-oauth-scopes"] ?? "";
+    return scopes.includes("repo");
+  } catch {
+    return false;
+  }
+}
+
 export async function getUserRepos(octokit: Octokit): Promise<GitHubRepo[]> {
   const { data } = await octokit.repos.listForAuthenticatedUser({
     sort: "pushed",
     per_page: 50,
-    type: "owner",
+    type: "all",
+    visibility: "all",
   });
   return data.map((r) => ({
     id: r.id,

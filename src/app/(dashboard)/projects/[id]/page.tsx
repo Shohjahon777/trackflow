@@ -11,6 +11,7 @@ import { getProject } from "@/actions/project";
 import { getProjectCommits } from "@/lib/github";
 import { EditProjectDialog } from "@/components/project/edit-project-dialog";
 import { DeleteProjectButton } from "@/components/project/delete-project-button";
+import { ProfileVisibilityToggle } from "@/components/project/profile-visibility-toggle";
 import { ProjectTabs } from "@/components/project/project-tabs";
 import type { ProjectStatus } from "@prisma/client";
 import { auth } from "@/lib/auth";
@@ -135,6 +136,12 @@ export default async function ProjectDetailPage({
             <span className="font-mono">Live site</span>
           </a>
         )}
+        <div className="ml-auto">
+          <ProfileVisibilityToggle
+            projectId={project.id}
+            showOnProfile={project.showOnProfile}
+          />
+        </div>
       </div>
 
       {/* Repo warning banner */}
