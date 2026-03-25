@@ -69,7 +69,8 @@
       "Bash(cat /d/soqqali/trackflow/src/app/\\\\\\(dashboard\\\\\\)/time-log/page.tsx)",
       "Bash(cat /d/soqqali/trackflow/src/app/\\\\\\(dashboard\\\\\\)/activity/page.tsx)",
       "Bash(ls \"D:/soqqali/trackflow/src/app/\\(dashboard\\)/\")",
-      "Bash(cd:*)"
+      "Bash(cd:*)",
+      "Bash(rm:*)"
     ]
   }
 }

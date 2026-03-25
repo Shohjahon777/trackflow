@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
+import { useRouter } from "next/navigation";
 import {
   Play,
   Pause,
@@ -68,6 +69,7 @@ export function PomodoroTimer({
   durationMinutes,
   completedCount,
 }: PomodoroTimerProps) {
+  const router = useRouter();
   const totalSeconds = durationMinutes * 60;
   const [timeRemaining, setTimeRemaining] = useState(totalSeconds);
   const [isRunning, setIsRunning] = useState(false);
@@ -76,6 +78,11 @@ export function PomodoroTimer({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const startedAtRef = useRef<number | null>(null);
   const completingRef = useRef(false);
+
+  // Sync localCount when prop changes (e.g. after server revalidation)
+  useEffect(() => {
+    setLocalCount(completedCount);
+  }, [completedCount]);
 
   // Rehydrate from localStorage on mount
   useEffect(() => {
@@ -163,7 +170,9 @@ export function PomodoroTimer({
     await completePomodoroSession(taskId);
     setLocalCount((c) => c + 1);
     completingRef.current = false;
-  }, [taskId]);
+    // Force server components to re-fetch so parent data stays fresh
+    router.refresh();
+  }, [taskId, router]);
 
   function start() {
     if (timeRemaining <= 0) {
@@ -207,6 +216,31 @@ export function PomodoroTimer({
       setTimeRemaining(next * 60);
     }
     await updateTaskFields(taskId, { pomodoroMinutes: next });
+  }
+
+  function renderTomatoes(count: number, muted = false) {
+    if (count === 0) {
+      return (
+        <span className={cn("text-[11px]", muted ? "text-white/30" : "text-text-tertiary")}>
+          No sessions yet
+        </span>
+      );
+    }
+    if (count <= 10) {
+      return (
+        <span className="flex items-center gap-0.5">
+          {Array.from({ length: count }, (_, i) => (
+            <span key={i} className="text-[14px]" role="img" aria-label="pomodoro">🍅</span>
+          ))}
+        </span>
+      );
+    }
+    return (
+      <span className={cn("flex items-center gap-1 font-mono text-[12px]", muted ? "text-white/40" : "text-text-secondary")}>
+        <span className="text-[14px]" role="img" aria-label="pomodoro">🍅</span>
+        × {count}
+      </span>
+    );
   }
 
   const minutes = Math.floor(timeRemaining / 60);
@@ -303,11 +337,9 @@ export function PomodoroTimer({
         </button>
       </div>
 
-      {/* Completed count */}
-      <div className="mt-2 text-center">
-        <span className="font-mono text-[11px] text-text-tertiary">
-          {localCount} pomodoro{localCount !== 1 ? "s" : ""} completed
-        </span>
+      {/* Completed count — tomato icons */}
+      <div className="mt-2 flex justify-center">
+        {renderTomatoes(localCount)}
       </div>
     </div>
   );
@@ -411,10 +443,10 @@ export function PomodoroTimer({
               </div>
             </div>
 
-            {/* Session count */}
-            <p className="mt-8 font-mono text-[13px] text-white/30">
-              {localCount} pomodoro{localCount !== 1 ? "s" : ""} completed
-            </p>
+            {/* Session count — tomato icons */}
+            <div className="mt-8 flex justify-center">
+              {renderTomatoes(localCount, true)}
+            </div>
 
             {/* Keyboard hint */}
             <p className="mt-4 text-[11px] text-white/20">

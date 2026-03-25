@@ -95,6 +95,7 @@ model Project {
   milestones    Milestone[]
   timeLogs      TimeLog[]
   projectClicks ProjectClick[]
+  boards        Board[]
 
   @@unique([userId, slug])
   @@map("projects")
@@ -125,11 +126,13 @@ model Task {
   pomodoroCount   Int          @default(0) @map("pomodoro_count")
   pomodoroMinutes Int          @default(30) @map("pomodoro_minutes")
   projectId       String       @map("project_id")
+  boardColumnId   String?      @map("board_column_id")
   createdAt       DateTime     @default(now()) @map("created_at")
   updatedAt       DateTime     @updatedAt @map("updated_at")
 
-  project  Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  timeLogs TimeLog[]
+  project     Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  boardColumn BoardColumn? @relation(fields: [boardColumnId], references: [id], onDelete: SetNull)
+  timeLogs    TimeLog[]
 
   @@map("tasks")
 }
@@ -210,6 +213,34 @@ model ProjectClick {
 
   @@index([projectId, timestamp])
   @@map("project_clicks")
+}
+
+// ─── Board Models ───
+
+model Board {
+  id        String        @id @default(cuid())
+  name      String
+  projectId String        @map("project_id")
+  createdAt DateTime      @default(now()) @map("created_at")
+  updatedAt DateTime      @updatedAt @map("updated_at")
+
+  project Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  columns BoardColumn[]
+
+  @@map("boards")
+}
+
+model BoardColumn {
+  id      String @id @default(cuid())
+  title   String
+  color   String @default("#6366A0")
+  order   Int    @default(0)
+  boardId String @map("board_id")
+
+  board Board  @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  tasks Task[]
+
+  @@map("board_columns")
 }
 
 // ─── Telegram Bot Models ───

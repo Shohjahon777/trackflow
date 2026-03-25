@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useEffect, useTransition } from "react";
 import {
   Circle,
   CircleDot,
@@ -16,12 +16,14 @@ import {
   SheetTitle,
   SheetDescription,
 } from "@/components/ui/sheet";
-import { Badge } from "@/components/ui/badge";
 import { updateTaskFields, deleteTask } from "@/actions/task";
 import { PomodoroTimer } from "@/components/project/pomodoro-timer";
+import { PomodoroReport } from "@/components/project/pomodoro-report";
 
 type TaskTimeLog = {
   duration: number;
+  date: Date;
+  description: string;
 };
 
 type TaskData = {
@@ -78,6 +80,15 @@ export function TaskDetailSheet({
   );
   const [isPending, startTransition] = useTransition();
   const [isDeleting, startDeleteTransition] = useTransition();
+
+  // Sync local state when task prop changes (e.g. after server revalidation or reopen)
+  useEffect(() => {
+    setTitle(task.title);
+    setDescription(task.description ?? "");
+    setStatus(task.status);
+    setPriority(task.priority);
+    setDueDate(task.dueDate ? new Date(task.dueDate).toISOString().split("T")[0] : "");
+  }, [task]);
 
   const totalTimeLogged = task.timeLogs.reduce((sum, t) => sum + t.duration, 0);
 
@@ -218,6 +229,13 @@ export function TaskDetailSheet({
             completedCount={task.pomodoroCount}
           />
 
+          {/* Pomodoro report */}
+          <PomodoroReport
+            pomodoroCount={task.pomodoroCount}
+            pomodoroMinutes={task.pomodoroMinutes}
+            timeLogs={task.timeLogs}
+          />
+
           {/* Time tracking summary */}
           <div className="rounded-md border-[0.5px] border-border bg-surface p-4">
             <div className="flex items-center gap-2">
@@ -226,13 +244,22 @@ export function TaskDetailSheet({
                 Time tracked
               </span>
             </div>
-            <div className="mt-2 flex items-baseline gap-3">
+            <div className="mt-2 flex items-center gap-3">
               <span className="font-mono text-[20px] font-medium text-text-primary">
                 {formatDuration(totalTimeLogged)}
               </span>
-              <Badge variant="neutral">
-                {task.pomodoroCount} pomodoro{task.pomodoroCount !== 1 ? "s" : ""}
-              </Badge>
+              {task.pomodoroCount > 0 && (
+                <span className="flex items-center gap-0.5">
+                  {task.pomodoroCount <= 10
+                    ? Array.from({ length: task.pomodoroCount }, (_, i) => (
+                        <span key={i} className="text-[13px]">🍅</span>
+                      ))
+                    : <span className="flex items-center gap-1 font-mono text-[12px] text-text-secondary">
+                        <span className="text-[13px]">🍅</span> × {task.pomodoroCount}
+                      </span>
+                  }
+                </span>
+              )}
             </div>
           </div>
 

@@ -4,6 +4,7 @@ import { useState } from "react";
 import {
   LayoutDashboard,
   CheckSquare,
+  LayoutGrid,
   Flag,
   Clock,
   Brain,
@@ -16,10 +17,13 @@ import { MilestonesTab } from "./tabs/milestones-tab";
 import { TimeLogTab } from "./tabs/time-log-tab";
 import { BrainTab } from "./tabs/brain-tab";
 import { CalendarTab } from "./tabs/calendar-tab";
+import { TaskKanbanBoard } from "./task-kanban-board";
 import type { GitHubCommit } from "@/lib/github";
 
 type TaskTimeLog = {
   duration: number;
+  date: Date;
+  description: string;
 };
 
 type ProjectTabsProps = {
@@ -70,11 +74,31 @@ type ProjectTabsProps = {
     updatedAt: Date;
   }[];
   commits: GitHubCommit[];
+  boards: {
+    id: string;
+    name: string;
+    columns: {
+      id: string;
+      title: string;
+      color: string;
+      order: number;
+      tasks: {
+        id: string;
+        title: string;
+        status: string;
+        priority: string;
+        dueDate: Date | null;
+        order: number;
+        pomodoroCount: number;
+      }[];
+    }[];
+  }[];
 };
 
 const tabs = [
   { value: "overview", label: "Overview", icon: LayoutDashboard },
   { value: "tasks", label: "Tasks", icon: CheckSquare },
+  { value: "board", label: "Board", icon: LayoutGrid },
   { value: "milestones", label: "Milestones", icon: Flag },
   { value: "time", label: "Time log", icon: Clock },
   { value: "calendar", label: "Calendar", icon: Calendar },
@@ -88,6 +112,7 @@ export function ProjectTabs({
   timeLogs,
   notes,
   commits,
+  boards,
 }: ProjectTabsProps) {
   const [active, setActive] = useState("overview");
 
@@ -150,6 +175,13 @@ export function ProjectTabs({
         )}
         {active === "tasks" && (
           <TasksTab tasks={tasks} projectId={project.id} />
+        )}
+        {active === "board" && (
+          <TaskKanbanBoard
+            projectId={project.id}
+            boards={boards}
+            allTasks={tasks}
+          />
         )}
         {active === "milestones" && (
           <MilestonesTab milestones={milestones} projectId={project.id} />

@@ -13,6 +13,7 @@ import { EditProjectDialog } from "@/components/project/edit-project-dialog";
 import { DeleteProjectButton } from "@/components/project/delete-project-button";
 import { ProfileVisibilityToggle } from "@/components/project/profile-visibility-toggle";
 import { ProjectTabs } from "@/components/project/project-tabs";
+import { getBoardsForProject } from "@/actions/board";
 import type { ProjectStatus } from "@prisma/client";
 import { auth } from "@/lib/auth";
 
@@ -68,6 +69,9 @@ export default async function ProjectDetailPage({
       // GitHub data is optional
     }
   }
+
+  // Fetch boards for kanban view
+  const boards = await getBoardsForProject(id);
 
   return (
     <div className="mx-auto max-w-[960px]">
@@ -183,7 +187,11 @@ export default async function ProjectDetailPage({
             createdAt: t.createdAt,
             pomodoroCount: t.pomodoroCount ?? 0,
             pomodoroMinutes: t.pomodoroMinutes ?? 30,
-            timeLogs: t.timeLogs ?? [],
+            timeLogs: (t.timeLogs ?? []).map((tl: any) => ({
+              duration: tl.duration,
+              date: tl.date,
+              description: tl.description ?? "",
+            })),
           }))}
           milestones={project.milestones.map((m) => ({
             id: m.id,
@@ -209,6 +217,25 @@ export default async function ProjectDetailPage({
             updatedAt: n.updatedAt,
           }))}
           commits={commits}
+          boards={boards.map((b) => ({
+            id: b.id,
+            name: b.name,
+            columns: b.columns.map((c) => ({
+              id: c.id,
+              title: c.title,
+              color: c.color,
+              order: c.order,
+              tasks: c.tasks.map((t) => ({
+                id: t.id,
+                title: t.title,
+                status: t.status,
+                priority: t.priority,
+                dueDate: t.dueDate,
+                order: t.order,
+                pomodoroCount: t.pomodoroCount,
+              })),
+            })),
+          }))}
         />
       </div>
     </div>

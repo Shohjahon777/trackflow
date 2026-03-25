@@ -221,7 +221,7 @@ export async function getProject(projectId: string) {
       notes: { orderBy: { updatedAt: "desc" } },
       tasks: {
         orderBy: [{ status: "asc" }, { order: "asc" }],
-        include: { timeLogs: { select: { duration: true } } },
+        include: { timeLogs: { select: { duration: true, date: true, description: true } } },
       },
       milestones: { orderBy: { order: "asc" } },
       timeLogs: {

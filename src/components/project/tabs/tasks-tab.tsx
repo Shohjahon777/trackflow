@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useRef, useState, useEffect, useTransition } from "react";
 import {
   Circle,
   CircleDot,
@@ -15,6 +15,8 @@ import { TaskDetailSheet } from "@/components/project/task-detail-sheet";
 
 type TaskTimeLog = {
   duration: number;
+  date: Date;
+  description: string;
 };
 
 type Task = {
@@ -148,6 +150,15 @@ export function TasksTab({ tasks, projectId }: TasksTabProps) {
   const [isPending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+
+  // Sync selectedTask with fresh data when tasks array updates (server revalidation)
+  useEffect(() => {
+    if (selectedTask) {
+      const fresh = tasks.find((t) => t.id === selectedTask.id);
+      if (fresh) setSelectedTask(fresh);
+      else setSelectedTask(null);
+    }
+  }, [tasks]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const todoTasks = tasks.filter((t) => t.status === "TODO");
   const inProgressTasks = tasks.filter((t) => t.status === "IN_PROGRESS");
