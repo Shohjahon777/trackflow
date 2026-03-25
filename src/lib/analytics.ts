@@ -7,6 +7,7 @@ export type AnalyticsData = {
   viewsByDay: { date: string; count: number }[];
   topReferrers: { referrer: string; count: number }[];
   topProjects: { id: string; name: string; clicks: number }[];
+  topCountries: { country: string; count: number }[];
 };
 
 export async function getAnalytics(
@@ -27,10 +28,10 @@ export async function getAnalytics(
       where: { project: { userId }, timestamp: { gte: since } },
     }),
 
-    // Views by day
+    // Views by day + country
     db.profileView.findMany({
       where: { userId, timestamp: { gte: since } },
-      select: { timestamp: true },
+      select: { timestamp: true, country: true },
       orderBy: { timestamp: "asc" },
     }),
 
@@ -83,5 +84,16 @@ export async function getAnalytics(
     .sort((a, b) => b.clicks - a.clicks)
     .slice(0, 10);
 
-  return { totalViews, totalClicks, viewsByDay, topReferrers, topProjects };
+  // Top countries
+  const countryMap = new Map<string, number>();
+  for (const v of views) {
+    const c = v.country || "Unknown";
+    countryMap.set(c, (countryMap.get(c) || 0) + 1);
+  }
+  const topCountries = Array.from(countryMap.entries())
+    .map(([country, count]) => ({ country, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 10);
+
+  return { totalViews, totalClicks, viewsByDay, topReferrers, topProjects, topCountries };
 }

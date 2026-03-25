@@ -24,6 +24,12 @@ export async function POST(
   try {
     const update = await request.json();
     const bot = createBotInstance(botConfig);
+
+    // If botInfo was missing (legacy bot), initialize once and cache
+    if (!botConfig.botInfo) {
+      await bot.init();
+    }
+
     await bot.handleUpdate(update);
 
     // 4. Log successful event

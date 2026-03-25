@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Hero } from "@/components/landing/hero";
 import { FeatureSections } from "@/components/landing/feature-sections";
 import { Comparison } from "@/components/landing/comparison";
-import { PricingSection } from "@/components/landing/pricing-section";
+// import { PricingSection } from "@/components/landing/pricing-section";
 import { CtaSection } from "@/components/landing/cta-section";
 import { auth } from "@/lib/auth";
 
@@ -20,8 +20,8 @@ export default async function LandingPage() {
           TRACK<span className="text-accent">FLOW</span>
         </Link>
         <div className="flex items-center gap-3">
-          <a href="#pricing" className="hidden text-[13px] text-text-secondary transition-colors hover:text-text-primary sm:block">
-            Pricing
+          <a href="#features" className="hidden text-[13px] text-text-secondary transition-colors hover:text-text-primary sm:block">
+            Features
           </a>
           {isLoggedIn ? (
             <Link href="/overview">
@@ -55,8 +55,8 @@ export default async function LandingPage() {
       {/* Comparison table */}
       <Comparison />
 
-      {/* Pricing */}
-      <PricingSection />
+      {/* Pricing — hidden until Stripe integration is ready */}
+      {/* <PricingSection /> */}
 
       {/* Final CTA */}
       <CtaSection />

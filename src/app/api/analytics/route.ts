@@ -13,11 +13,15 @@ export async function POST(req: Request) {
     const { type, userId, projectId, referrer } = body;
 
     if (type === "profile_view" && userId) {
+      // Vercel provides country code for free via header
+      const country = req.headers.get("x-vercel-ip-country") || null;
+
       await db.profileView.create({
         data: {
           userId,
           referrer: referrer || null,
           path: body.path || null,
+          country,
         },
       });
     } else if (type === "project_click" && projectId) {

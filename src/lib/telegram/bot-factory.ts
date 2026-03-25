@@ -1,4 +1,5 @@
 import { Bot } from "grammy";
+import type { UserFromGetMe } from "grammy/types";
 import { handlers } from "./handlers";
 import type { TelegramBotConfig } from "@/types/telegram";
 
@@ -9,7 +10,23 @@ export function createBotInstance(config: TelegramBotConfig): Bot {
   const cached = botCache.get(config.id);
   if (cached) return cached;
 
-  const bot = new Bot(config.token);
+  // Pass botInfo to constructor so grammy skips the init() / getMe call.
+  // Without this, handleUpdate() throws "Bot not initialized".
+  const botInfo = config.botInfo
+    ? ({
+        id: config.botInfo.id,
+        is_bot: true,
+        first_name: config.botInfo.first_name,
+        username: config.botInfo.username,
+        can_join_groups: config.botInfo.can_join_groups ?? false,
+        can_read_all_group_messages:
+          config.botInfo.can_read_all_group_messages ?? false,
+        supports_inline_queries:
+          config.botInfo.supports_inline_queries ?? false,
+      } as UserFromGetMe)
+    : undefined;
+
+  const bot = new Bot(config.token, botInfo ? { botInfo } : undefined);
 
   // Attach handler based on handlerType
   const handler = handlers[config.handlerType];

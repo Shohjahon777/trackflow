@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { decrypt } from "@/lib/encryption";
-import type { TelegramBotConfig } from "@/types/telegram";
+import type { TelegramBotConfig, StoredBotInfo } from "@/types/telegram";
 
 
 export async function getBotById(
@@ -15,6 +15,7 @@ export async function getBotById(
   return {
     ...bot,
     token: decrypt(bot.token),
+    botInfo: (bot.botInfo as StoredBotInfo) ?? null,
   };
 }
 

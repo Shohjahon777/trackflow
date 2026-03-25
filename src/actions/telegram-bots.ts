@@ -64,7 +64,7 @@ export async function createTelegramBot(formData: FormData) {
   const webhookSecret = generateWebhookSecret();
   const encryptedToken = encrypt(parsed.data.token);
 
-  // Create bot record
+  // Create bot record — store botInfo so we can skip bot.init() on webhook requests
   const bot = await db.telegramBot.create({
     data: {
       name: parsed.data.name,
@@ -73,6 +73,14 @@ export async function createTelegramBot(formData: FormData) {
       webhookSecret,
       handlerType: parsed.data.handlerType,
       config: (parsed.data.config ?? {}) as Record<string, string>,
+      botInfo: {
+        id: botInfo.id,
+        is_bot: true,
+        first_name: botInfo.firstName,
+        username: botInfo.username,
+        can_join_groups: botInfo.canJoinGroups ?? false,
+        can_read_all_group_messages: botInfo.canReadAllGroupMessages ?? false,
+      },
       userId: session.user.id,
     },
   });

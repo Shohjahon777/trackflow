@@ -11,10 +11,10 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Plus } from "lucide-react";
 import { createNote } from "@/actions/note";
+import { MarkdownEditor } from "@/components/project/brain/markdown-editor";
 
 type Project = { id: string; name: string };
 
@@ -96,13 +96,11 @@ export function CreateNoteDialog({ projects }: { projects: Project[] }) {
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="note-content">Content</Label>
-            <Textarea
-              id="note-content"
+            <Label>Content</Label>
+            <MarkdownEditor
               name="content"
-              placeholder="Write your note content here..."
+              placeholder="Write your note content here... **markdown** supported"
               rows={8}
-              className="font-mono text-[13px]"
               required
             />
           </div>

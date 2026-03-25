@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import Link from "next/link";
+import { ExternalLink } from "lucide-react";
 
 export const metadata: Metadata = { title: "Settings" };
 import { auth } from "@/lib/auth";
@@ -29,12 +31,37 @@ export default async function SettingsPage() {
   return (
     <div className="mx-auto max-w-[640px] space-y-8">
       <div>
-        <h1 className="text-[24px] font-medium leading-[1.25] text-text-primary">
-          Settings
-        </h1>
-        <p className="mt-1 text-[14px] text-text-secondary">
-          Manage your account and profile.
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-[24px] font-medium leading-[1.25] text-text-primary">
+              Settings
+            </h1>
+            <p className="mt-1 text-[14px] text-text-secondary">
+              Manage your account and public profile.
+            </p>
+          </div>
+          {user.username && (
+            <Link
+              href={`/${user.username}`}
+              target="_blank"
+              className="flex items-center gap-1.5 rounded-md border-[0.5px] border-border px-3 py-1.5 text-[13px] text-text-secondary transition-colors hover:bg-surface hover:text-text-primary"
+            >
+              <ExternalLink size={13} strokeWidth={1.5} />
+              View public profile
+            </Link>
+          )}
+        </div>
+
+        {user.username && (
+          <div className="rounded-md border-[0.5px] border-border bg-surface px-4 py-3">
+            <span className="text-[11px] font-medium uppercase tracking-[0.04em] text-text-tertiary">
+              Public profile URL
+            </span>
+            <p className="mt-1 font-mono text-[13px] text-accent">
+              trackflow.dev/{user.username}
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Profile section */}

@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { marked } from "marked";
 import {
   Sheet,
   SheetContent,
@@ -9,6 +11,9 @@ import {
 } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
 import { FileText, Terminal, GitPullRequest, Pencil } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+marked.setOptions({ breaks: true });
 
 type NoteReadingSheetProps = {
   note: {
@@ -56,6 +61,13 @@ export function NoteReadingSheet({
   const isPrompt = note.type === "PROMPT";
 
   const adr = isAdr ? parseAdrContent(note.content) : null;
+  const [html, setHtml] = useState("");
+
+  useEffect(() => {
+    if (!isAdr && !isPrompt) {
+      setHtml(marked.parse(note.content) as string);
+    }
+  }, [note.content, isAdr, isPrompt]);
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -123,9 +135,25 @@ export function NoteReadingSheet({
                 {note.content}
               </pre>
             ) : (
-              <p className="whitespace-pre-wrap text-[14px] leading-[1.7] text-text-primary">
-                {note.content}
-              </p>
+              <div
+                className={cn(
+                  "prose prose-sm max-w-none",
+                  "[&_h1]:text-[18px] [&_h1]:font-medium [&_h1]:text-text-primary",
+                  "[&_h2]:text-[15px] [&_h2]:font-medium [&_h2]:text-text-primary [&_h2]:mt-5",
+                  "[&_h3]:text-[14px] [&_h3]:font-medium [&_h3]:text-text-primary",
+                  "[&_p]:text-[14px] [&_p]:leading-[1.7] [&_p]:text-text-primary",
+                  "[&_li]:text-[14px] [&_li]:leading-[1.7] [&_li]:text-text-primary",
+                  "[&_ul]:pl-5 [&_ol]:pl-5",
+                  "[&_code]:rounded [&_code]:bg-surface [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-[12px] [&_code]:text-text-primary",
+                  "[&_pre]:rounded-md [&_pre]:border-[0.5px] [&_pre]:border-border [&_pre]:bg-surface [&_pre]:p-3",
+                  "[&_pre_code]:bg-transparent [&_pre_code]:p-0",
+                  "[&_blockquote]:border-l-2 [&_blockquote]:border-accent [&_blockquote]:pl-3 [&_blockquote]:text-text-secondary",
+                  "[&_a]:text-accent [&_a]:no-underline hover:[&_a]:underline",
+                  "[&_strong]:font-medium [&_strong]:text-text-primary",
+                  "[&_hr]:border-border"
+                )}
+                dangerouslySetInnerHTML={{ __html: html }}
+              />
             )}
           </div>
         </div>

@@ -25,26 +25,33 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-const navSections = [
+type NavBadge = "pro" | "soon" | null;
+
+type NavItem = {
+  href: string;
+  label: string;
+  icon: typeof LayoutDashboard;
+  badge: NavBadge;
+};
+
+const navSections: { label: string; items: NavItem[] }[] = [
   {
     label: "Workspace",
     items: [
-      { href: "/overview", label: "Overview", icon: LayoutDashboard },
-      { href: "/projects", label: "Projects", icon: FolderKanban },
-      { href: "/brain", label: "Brain", icon: Brain },
-      { href: "/activity", label: "Activity", icon: Activity },
-      { href: "/shares", label: "Shares", icon: Share2 },
-      { href: "/time-log", label: "Time log", icon: Clock },
-      { href: "/bots", label: "Bots", icon: Send },
+      { href: "/overview", label: "Overview", icon: LayoutDashboard, badge: null },
+      { href: "/projects", label: "Projects", icon: FolderKanban, badge: null },
+      { href: "/brain", label: "Brain", icon: Brain, badge: null },
+      { href: "/activity", label: "Activity", icon: Activity, badge: "soon" },
+      { href: "/shares", label: "Shares", icon: Share2, badge: null },
+      { href: "/time-log", label: "Time log", icon: Clock, badge: null },
+      { href: "/bots", label: "Bots", icon: Send, badge: "soon" },
     ],
   },
   {
     label: "Account",
     items: [
-      { href: "/profile", label: "Profile", icon: UserCircle },
-      { href: "/analytics", label: "Analytics", icon: BarChart3 },
-      { href: "/billing", label: "Billing", icon: CreditCard },
-      { href: "/settings", label: "Settings", icon: Settings },
+      { href: "/analytics", label: "Analytics", icon: BarChart3, badge: null },
+      { href: "/settings", label: "Settings", icon: Settings, badge: null },
     ],
   },
 ];
@@ -164,6 +171,16 @@ export function Sidebar({ collapsed, onToggle, user }: SidebarProps) {
                       className="shrink-0"
                     />
                     <span className="truncate">{item.label}</span>
+                    {item.badge === "pro" && (
+                      <span className="ml-auto shrink-0 rounded px-1.5 py-0.5 font-mono text-[9px] font-medium uppercase tracking-[0.06em] bg-accent/10 text-accent">
+                        Pro
+                      </span>
+                    )}
+                    {item.badge === "soon" && (
+                      <span className="ml-auto shrink-0 rounded px-1.5 py-0.5 font-mono text-[9px] font-medium uppercase tracking-[0.06em] bg-surface-hover text-text-tertiary">
+                        Soon
+                      </span>
+                    )}
                   </Link>
                 );
 
@@ -173,7 +190,7 @@ export function Sidebar({ collapsed, onToggle, user }: SidebarProps) {
                       <Tooltip>
                         <TooltipTrigger render={linkEl} />
                         <TooltipContent side="right" sideOffset={8}>
-                          {item.label}
+                          {item.label}{item.badge === "pro" ? " · Pro" : item.badge === "soon" ? " · Soon" : ""}
                         </TooltipContent>
                       </Tooltip>
                     </li>

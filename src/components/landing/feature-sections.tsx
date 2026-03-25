@@ -4,16 +4,16 @@ import { useRef, useEffect } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import {
-  FolderKanban,
-  Brain,
-  Share2,
-  UserCircle,
-  Copy,
   Check,
   Terminal,
-  ExternalLink,
-  GitBranch,
   Globe,
+  Timer,
+  Play,
+  Pause,
+  RotateCcw,
+  Eye,
+  MousePointerClick,
+  TrendingUp,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
@@ -21,7 +21,7 @@ gsap.registerPlugin(ScrollTrigger);
 
 export function FeatureSections() {
   return (
-    <div className="space-y-0">
+    <div id="features" className="scroll-mt-[48px] space-y-0">
       <FeatureBlock
         index={0}
         label="Multi-project dashboard"
@@ -34,21 +34,38 @@ export function FeatureSections() {
         index={1}
         label="Project brain"
         headline="Never lose context again"
-        description="Save architecture decisions, working prompts, and notes per project.
+        description="Save architecture decisions, working prompts, and markdown notes per project.
           One-click copy to paste into Claude, Cursor, or Bolt."
         visual={<BrainVisual />}
         reversed
       />
       <FeatureBlock
         index={2}
-        label="Client share links"
-        headline="Show clients without the chaos"
-        description="Generate a read-only URL per project. Clients see status and
-          milestones. They never see your notes, costs, or other projects."
-        visual={<ShareVisual />}
+        label="Focus timer"
+        headline="Ship with pomodoro flow"
+        description="Built-in pomodoro timer linked to tasks. Complete a session and your
+          time log updates automatically. See how many deep work sessions each task took."
+        visual={<PomodoroVisual />}
       />
       <FeatureBlock
         index={3}
+        label="Client share links"
+        headline="Show clients without the chaos"
+        description="Generate a read-only URL per project. Clients see status and
+          milestones in real-time. They never see your notes, costs, or other projects."
+        visual={<ShareVisual />}
+        reversed
+      />
+      <FeatureBlock
+        index={4}
+        label="Portfolio analytics"
+        headline="Know who visits your profile"
+        description="Track profile views, project clicks, top referrers, and visitor
+          regions — all from a clean dashboard. See what's getting attention."
+        visual={<AnalyticsVisual />}
+      />
+      <FeatureBlock
+        index={5}
         label="Public profile"
         headline="Your shipping portfolio"
         description="trackflow.dev/username — activity heatmap, shipped projects, tech
@@ -81,32 +98,40 @@ function FeatureBlock({
 
   useEffect(() => {
     const ctx = gsap.context(() => {
-      gsap.fromTo(
-        textRef.current,
-        { x: reversed ? 40 : -40, opacity: 0 },
-        {
-          x: 0,
-          opacity: 1,
-          duration: 0.8,
-          ease: "power3.out",
-          scrollTrigger: {
-            trigger: ref.current,
-            start: "top 75%",
-            once: true,
-          },
-        }
-      );
+      // Text slides in from the side with staggered children
+      const textChildren = textRef.current?.children;
+      if (textChildren) {
+        gsap.fromTo(
+          Array.from(textChildren),
+          { x: reversed ? 50 : -50, opacity: 0 },
+          {
+            x: 0,
+            opacity: 1,
+            duration: 0.7,
+            stagger: 0.12,
+            ease: "power3.out",
+            scrollTrigger: {
+              trigger: ref.current,
+              start: "top 75%",
+              once: true,
+            },
+          }
+        );
+      }
+
+      // Visual scales up with a slight rotation
       gsap.fromTo(
         visualRef.current,
-        { x: reversed ? -40 : 40, opacity: 0 },
+        { y: 50, opacity: 0, scale: 0.95 },
         {
-          x: 0,
+          y: 0,
           opacity: 1,
-          duration: 0.8,
+          scale: 1,
+          duration: 0.9,
           ease: "power3.out",
           scrollTrigger: {
             trigger: ref.current,
-            start: "top 75%",
+            start: "top 72%",
             once: true,
           },
         }
@@ -129,14 +154,14 @@ function FeatureBlock({
         }`}
       >
         {/* Text */}
-        <div ref={textRef} className="flex-1 space-y-4 opacity-0 lg:max-w-[400px]">
-          <span className="text-[11px] font-medium uppercase tracking-[0.04em] text-accent">
+        <div ref={textRef} className="flex-1 space-y-4 lg:max-w-[400px]">
+          <span className="block text-[11px] font-medium uppercase tracking-[0.04em] text-accent opacity-0">
             {label}
           </span>
-          <h2 className="text-[28px] font-medium leading-[1.15] text-text-primary md:text-[32px]">
+          <h2 className="text-[28px] font-medium leading-[1.15] text-text-primary opacity-0 md:text-[32px]">
             {headline}
           </h2>
-          <p className="text-[15px] leading-[1.7] text-text-secondary">{description}</p>
+          <p className="text-[15px] leading-[1.7] text-text-secondary opacity-0">{description}</p>
         </div>
 
         {/* Visual */}
@@ -233,7 +258,7 @@ Key rules:
             <span className="rounded-sm bg-indigo-50 px-1 py-0.5 font-mono text-[8px] font-medium text-indigo-600">context</span>
             <span className="rounded-sm bg-indigo-50 px-1 py-0.5 font-mono text-[8px] font-medium text-indigo-600">claude</span>
           </div>
-          <span className="font-mono text-[9px] text-text-tertiary">23× copied</span>
+          <span className="font-mono text-[9px] text-text-tertiary">23x copied</span>
         </div>
       </div>
 
@@ -248,6 +273,80 @@ Key rules:
           <p className="text-[10px] leading-[1.5] text-text-secondary">
             Server Actions for all mutations. API routes only for webhooks and public endpoints.
           </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PomodoroVisual() {
+  return (
+    <div className="bg-background p-5 space-y-4">
+      {/* Task header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="flex size-[24px] items-center justify-center rounded-md bg-accent-light">
+            <Timer size={12} className="text-accent" />
+          </div>
+          <div>
+            <p className="text-[12px] font-medium text-text-primary">Implement auth flow</p>
+            <p className="text-[9px] text-text-tertiary">TrackFlow &middot; In progress</p>
+          </div>
+        </div>
+        <Badge variant="info" className="text-[8px]">focused</Badge>
+      </div>
+
+      {/* Timer display */}
+      <div className="flex flex-col items-center py-4">
+        <div className="relative flex size-[120px] items-center justify-center">
+          {/* Circular progress ring */}
+          <svg className="absolute inset-0" viewBox="0 0 120 120">
+            <circle cx="60" cy="60" r="54" fill="none" stroke="currentColor" className="text-border" strokeWidth="3" />
+            <circle
+              cx="60" cy="60" r="54"
+              fill="none"
+              stroke="currentColor"
+              className="text-accent"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeDasharray={`${2 * Math.PI * 54}`}
+              strokeDashoffset={`${2 * Math.PI * 54 * 0.35}`}
+              transform="rotate(-90 60 60)"
+            />
+          </svg>
+          <span className="font-mono text-[28px] font-medium text-text-primary">19:32</span>
+        </div>
+        <p className="mt-2 text-[10px] text-text-tertiary">30 min session &middot; 65% complete</p>
+      </div>
+
+      {/* Controls */}
+      <div className="flex items-center justify-center gap-3">
+        <button className="flex size-[32px] items-center justify-center rounded-md border-[0.5px] border-border text-text-tertiary">
+          <RotateCcw size={14} strokeWidth={1.5} />
+        </button>
+        <button className="flex size-[40px] items-center justify-center rounded-full bg-accent text-cloud">
+          <Pause size={16} strokeWidth={2} />
+        </button>
+        <button className="flex size-[32px] items-center justify-center rounded-md border-[0.5px] border-border text-text-tertiary">
+          <Play size={14} strokeWidth={1.5} />
+        </button>
+      </div>
+
+      {/* Session stats */}
+      <div className="flex items-center justify-between rounded-md border-[0.5px] border-border bg-surface px-3 py-2">
+        <div className="text-center">
+          <p className="font-mono text-[16px] font-medium text-text-primary">4</p>
+          <p className="text-[8px] text-text-tertiary">sessions today</p>
+        </div>
+        <div className="h-[24px] w-[0.5px] bg-border" />
+        <div className="text-center">
+          <p className="font-mono text-[16px] font-medium text-text-primary">2h</p>
+          <p className="text-[8px] text-text-tertiary">deep work</p>
+        </div>
+        <div className="h-[24px] w-[0.5px] bg-border" />
+        <div className="text-center">
+          <p className="font-mono text-[16px] font-medium text-accent">12</p>
+          <p className="text-[8px] text-text-tertiary">total pomodoros</p>
         </div>
       </div>
     </div>
@@ -291,7 +390,83 @@ function ShareVisual() {
             ))}
           </div>
         </div>
-        <p className="text-center text-[9px] text-ash">Powered by TrackFlow</p>
+        {/* Live status */}
+        <div className="flex items-center gap-2 rounded-md bg-success-bg px-3 py-2">
+          <span className="size-[6px] rounded-full bg-success" />
+          <span className="text-[11px] text-success">Client can see this in real-time — no login needed</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AnalyticsVisual() {
+  const viewBars = [3, 7, 5, 12, 8, 15, 10, 18, 6, 14, 9, 20, 11, 16];
+  const maxView = Math.max(...viewBars);
+
+  return (
+    <div className="bg-background p-5 space-y-4">
+      {/* Stat cards row */}
+      <div className="grid grid-cols-3 gap-2">
+        <div className="rounded-md border-[0.5px] border-border bg-surface p-2.5">
+          <div className="flex items-center gap-1.5">
+            <Eye size={10} className="text-text-tertiary" strokeWidth={1.5} />
+            <span className="text-[9px] text-text-tertiary">Profile views</span>
+          </div>
+          <p className="mt-1 font-mono text-[18px] font-medium text-text-primary">284</p>
+        </div>
+        <div className="rounded-md border-[0.5px] border-border bg-surface p-2.5">
+          <div className="flex items-center gap-1.5">
+            <MousePointerClick size={10} className="text-text-tertiary" strokeWidth={1.5} />
+            <span className="text-[9px] text-text-tertiary">Project clicks</span>
+          </div>
+          <p className="mt-1 font-mono text-[18px] font-medium text-text-primary">67</p>
+        </div>
+        <div className="rounded-md border-[0.5px] border-border bg-surface p-2.5">
+          <div className="flex items-center gap-1.5">
+            <TrendingUp size={10} className="text-text-tertiary" strokeWidth={1.5} />
+            <span className="text-[9px] text-text-tertiary">Top referrer</span>
+          </div>
+          <p className="mt-1 truncate text-[12px] font-medium text-text-primary">twitter.com</p>
+        </div>
+      </div>
+
+      {/* Mini chart */}
+      <div className="rounded-md border-[0.5px] border-border bg-surface p-3">
+        <div className="flex items-center justify-between">
+          <span className="text-[10px] font-medium text-text-primary">Daily profile views</span>
+          <span className="text-[9px] text-text-tertiary">Last 14 days</span>
+        </div>
+        <div className="mt-3 flex items-end gap-1" style={{ height: 60 }}>
+          {viewBars.map((v, i) => (
+            <div
+              key={i}
+              className="flex-1 rounded-t bg-accent/60"
+              style={{ height: `${Math.max((v / maxView) * 100, 8)}%` }}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Visitor regions */}
+      <div className="rounded-md border-[0.5px] border-border bg-surface p-3">
+        <div className="flex items-center gap-1.5">
+          <Globe size={10} className="text-text-tertiary" strokeWidth={1.5} />
+          <span className="text-[10px] font-medium text-text-primary">Visitor regions</span>
+        </div>
+        <div className="mt-2 space-y-1.5">
+          {[
+            { country: "United States", count: 89 },
+            { country: "Germany", count: 34 },
+            { country: "Uzbekistan", count: 28 },
+            { country: "United Kingdom", count: 19 },
+          ].map((c) => (
+            <div key={c.country} className="flex items-center justify-between">
+              <span className="text-[10px] text-text-secondary">{c.country}</span>
+              <span className="font-mono text-[9px] text-text-tertiary">{c.count}</span>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

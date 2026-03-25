@@ -14,48 +14,72 @@ const rows = [
   { feature: "Public dev profile", trackflow: true, notion: false, linear: false, github: true },
   { feature: "Architecture decision records", trackflow: true, notion: true, linear: false, github: false },
   { feature: "Activity heatmap", trackflow: true, notion: false, linear: false, github: true },
-  { feature: "Time & cost tracking", trackflow: true, notion: false, linear: true, github: false },
-  { feature: "Bot assistants (Pro)", trackflow: true, notion: false, linear: false, github: false },
-  { feature: "AI context generator (Pro)", trackflow: true, notion: false, linear: false, github: false },
+  { feature: "Pomodoro timer per task", trackflow: true, notion: false, linear: false, github: false },
+  { feature: "Time tracking", trackflow: true, notion: false, linear: true, github: false },
+  { feature: "Portfolio analytics", trackflow: true, notion: false, linear: false, github: false },
+  { feature: "Visitor regions tracking", trackflow: true, notion: false, linear: false, github: false },
   { feature: "Built for solo builders", trackflow: true, notion: false, linear: false, github: false },
   { feature: "Free tier — no credit card", trackflow: true, notion: true, linear: true, github: true },
 ];
 
 export function Comparison() {
-  const ref = useRef<HTMLDivElement>(null);
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const headerRef = useRef<HTMLDivElement>(null);
+  const tableRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const ctx = gsap.context(() => {
+      // Header text staggers in
+      const headerChildren = headerRef.current?.children;
+      if (headerChildren) {
+        gsap.fromTo(
+          Array.from(headerChildren),
+          { y: 30, opacity: 0 },
+          {
+            y: 0,
+            opacity: 1,
+            duration: 0.6,
+            stagger: 0.1,
+            ease: "power3.out",
+            scrollTrigger: { trigger: sectionRef.current, start: "top 80%", once: true },
+          }
+        );
+      }
+
+      // Table rows stagger in
       gsap.fromTo(
-        ref.current,
-        { y: 40, opacity: 0 },
+        ".comparison-row",
+        { x: -20, opacity: 0 },
         {
-          y: 0,
+          x: 0,
           opacity: 1,
-          duration: 0.8,
-          ease: "power3.out",
-          scrollTrigger: { trigger: ref.current, start: "top 80%", once: true },
+          duration: 0.4,
+          stagger: 0.05,
+          ease: "power2.out",
+          scrollTrigger: { trigger: tableRef.current, start: "top 85%", once: true },
         }
       );
-    }, ref);
+    }, sectionRef);
     return () => ctx.revert();
   }, []);
 
   return (
-    <section className="border-t border-border px-6 py-24 md:px-12">
-      <div ref={ref} className="mx-auto max-w-[800px] opacity-0">
-        <p className="text-center text-[11px] font-medium uppercase tracking-[0.04em] text-accent">
-          Comparison
-        </p>
-        <h2 className="mt-2 text-center text-[28px] font-medium leading-[1.15] text-text-primary md:text-[32px]">
-          Why not just use Notion?
-        </h2>
-        <p className="mx-auto mt-3 max-w-[440px] text-center text-[14px] leading-[1.7] text-text-secondary">
-          Great tools, wrong job. They weren't built for solo builders shipping
-          multiple projects who want a public profile.
-        </p>
+    <section ref={sectionRef} className="border-t border-border px-6 py-24 md:px-12">
+      <div className="mx-auto max-w-[800px]">
+        <div ref={headerRef}>
+          <p className="text-center text-[11px] font-medium uppercase tracking-[0.04em] text-accent opacity-0">
+            Comparison
+          </p>
+          <h2 className="mt-2 text-center text-[28px] font-medium leading-[1.15] text-text-primary opacity-0 md:text-[32px]">
+            Why not just use Notion?
+          </h2>
+          <p className="mx-auto mt-3 max-w-[440px] text-center text-[14px] leading-[1.7] text-text-secondary opacity-0">
+            Great tools, wrong job. They weren&apos;t built for solo builders shipping
+            multiple projects who want a public profile.
+          </p>
+        </div>
 
-        <div className="mt-10 overflow-hidden rounded-lg border-[0.5px] border-border">
+        <div ref={tableRef} className="mt-10 overflow-hidden rounded-lg border-[0.5px] border-border">
           {/* Header */}
           <div className="flex h-[40px] items-center border-b border-border bg-surface text-[11px] font-medium uppercase tracking-[0.04em] text-text-tertiary">
             <span className="flex-1 px-4">Feature</span>
@@ -66,10 +90,10 @@ export function Comparison() {
           </div>
 
           {/* Rows */}
-          {rows.map((row, i) => (
+          {rows.map((row) => (
             <div
               key={row.feature}
-              className="flex h-[40px] items-center border-b-[0.5px] border-border last:border-0 text-[13px]"
+              className="comparison-row flex h-[40px] items-center border-b-[0.5px] border-border last:border-0 text-[13px] opacity-0"
             >
               <span className="flex-1 px-4 text-text-body">{row.feature}</span>
               <Cell value={row.trackflow} highlight />
