@@ -1,6 +1,7 @@
 generator client {
   provider = "prisma-client-js"
 }
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -9,16 +10,22 @@ datasource db {
 // ─── Auth (NextAuth v5 + Prisma Adapter) ───
 
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String?   @unique
-  emailVerified DateTime? @map("email_verified")
-  image         String?
-  username      String?   @unique
-  bio           String?
-  githubUsername String?  @map("github_username")
-  createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime  @updatedAt @map("updated_at")
+  id               String    @id @default(cuid())
+  name             String?
+  email            String?   @unique
+  emailVerified    DateTime? @map("email_verified")
+  image            String?
+  username         String?   @unique
+  bio              String?
+  githubUsername   String?   @map("github_username")
+  xp               Int       @default(0)
+  level            Int       @default(1)
+  proofOfWorkScore Int       @default(0) @map("pow_score")
+  currentStreak    Int       @default(0) @map("current_streak")
+  longestStreak    Int       @default(0) @map("longest_streak")
+  lastActivityDate DateTime? @map("last_activity_date") @db.Date
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
 
   accounts      Account[]
   sessions      Session[]
@@ -27,6 +34,8 @@ model User {
   profileViews  ProfileView[]
   telegramBots  TelegramBot[]
   telegramChats TelegramChat[]
+  xpEvents      XpEvent[]
+  badges        Badge[]
 
   @@map("users")
 }
@@ -74,20 +83,20 @@ model VerificationToken {
 // ─── Core Models ───
 
 model Project {
-  id          String        @id @default(cuid())
-  name        String
-  slug        String
-  description String?
-  status      ProjectStatus @default(ACTIVE)
-  repoUrl     String?       @map("repo_url")
-  deployUrl   String?       @map("deploy_url")
-  stack       String[]      @default([])
-  category    ProjectCategory @default(PERSONAL)
-  shareToken    String?       @unique @map("share_token")
-  showOnProfile Boolean       @default(true) @map("show_on_profile")
-  userId        String        @map("user_id")
-  createdAt   DateTime      @default(now()) @map("created_at")
-  updatedAt   DateTime      @updatedAt @map("updated_at")
+  id            String          @id @default(cuid())
+  name          String
+  slug          String
+  description   String?
+  status        ProjectStatus   @default(ACTIVE)
+  repoUrl       String?         @map("repo_url")
+  deployUrl     String?         @map("deploy_url")
+  stack         String[]        @default([])
+  category      ProjectCategory @default(PERSONAL)
+  shareToken    String?         @unique @map("share_token")
+  showOnProfile Boolean         @default(true) @map("show_on_profile")
+  userId        String          @map("user_id")
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
 
   user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   notes         Note[]
@@ -156,7 +165,7 @@ model Milestone {
 model TimeLog {
   id          String   @id @default(cuid())
   description String
-  duration    Int      // duration in minutes
+  duration    Int // duration in minutes
   cost        Decimal? @db.Decimal(10, 2)
   date        DateTime @default(now())
   taskId      String?  @map("task_id")
@@ -171,18 +180,18 @@ model TimeLog {
 }
 
 model Plan {
-  id                   String     @id @default(cuid())
-  userId               String     @unique @map("user_id")
-  type                 PlanType   @default(FREE)
-  status               PlanStatus @default(ACTIVE)
-  stripeCustomerId     String?    @unique @map("stripe_customer_id")
-  stripeSubscriptionId String?    @unique @map("stripe_subscription_id")
-  stripePriceId        String?    @map("stripe_price_id")
+  id                   String        @id @default(cuid())
+  userId               String        @unique @map("user_id")
+  type                 PlanType      @default(FREE)
+  status               PlanStatus    @default(ACTIVE)
+  stripeCustomerId     String?       @unique @map("stripe_customer_id")
+  stripeSubscriptionId String?       @unique @map("stripe_subscription_id")
+  stripePriceId        String?       @map("stripe_price_id")
   billingCycle         BillingCycle? @map("billing_cycle")
-  currentPeriodEnd     DateTime?  @map("current_period_end")
-  cancelAtPeriodEnd    Boolean    @default(false) @map("cancel_at_period_end")
-  createdAt            DateTime   @default(now()) @map("created_at")
-  updatedAt            DateTime   @updatedAt @map("updated_at")
+  currentPeriodEnd     DateTime?     @map("current_period_end")
+  cancelAtPeriodEnd    Boolean       @default(false) @map("cancel_at_period_end")
+  createdAt            DateTime      @default(now()) @map("created_at")
+  updatedAt            DateTime      @updatedAt @map("updated_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -218,11 +227,11 @@ model ProjectClick {
 // ─── Board Models ───
 
 model Board {
-  id        String        @id @default(cuid())
+  id        String   @id @default(cuid())
   name      String
-  projectId String        @map("project_id")
-  createdAt DateTime      @default(now()) @map("created_at")
-  updatedAt DateTime      @updatedAt @map("updated_at")
+  projectId String   @map("project_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   project Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
   columns BoardColumn[]
@@ -249,7 +258,7 @@ model TelegramBot {
   id            String    @id @default(cuid())
   name          String
   botUsername   String    @unique @map("bot_username")
-  token         String    // Encrypted at rest via middleware
+  token         String // Encrypted at rest via middleware
   webhookSecret String    @map("webhook_secret")
   handlerType   String    @map("handler_type")
   isEnabled     Boolean   @default(true) @map("is_enabled")
@@ -261,7 +270,7 @@ model TelegramBot {
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")
 
-  user User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   logs TelegramBotLog[]
 
   @@map("telegram_bots")
@@ -270,7 +279,7 @@ model TelegramBot {
 model TelegramBotLog {
   id        String   @id @default(cuid())
   botId     String   @map("bot_id")
-  event     String   // "message", "command", "error", "webhook_set"
+  event     String // "message", "command", "error", "webhook_set"
   payload   Json?
   level     String   @default("info") // "info", "warn", "error"
   createdAt DateTime @default(now()) @map("created_at")
@@ -290,6 +299,37 @@ model TelegramChat {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("telegram_chats")
+}
+
+// ─── Gamification (Phase 12) ───
+
+model XpEvent {
+  id         String   @id @default(cuid())
+  userId     String   @map("user_id")
+  actionType XpAction @map("action_type")
+  points     Int
+  projectId  String?  @map("project_id")
+  metadata   Json?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@map("xp_events")
+}
+
+model Badge {
+  id       String    @id @default(cuid())
+  userId   String    @map("user_id")
+  type     BadgeType
+  name     String
+  metadata Json?
+  earnedAt DateTime  @default(now()) @map("earned_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("badges")
 }
 
 // ─── Enums ───
@@ -342,4 +382,27 @@ enum PlanStatus {
 enum BillingCycle {
   MONTHLY
   ANNUAL
+}
+
+enum XpAction {
+  DEPLOY
+  MILESTONE
+  BRAIN_NOTE
+  PROJECT_SHIPPED
+  STREAK_DAY
+  STAR_RECEIVED
+  CHALLENGE_COMPLETED
+  VOUCH_SPENT
+  VOUCH_REFUND
+  HIDE_SPENT
+}
+
+enum BadgeType {
+  FOUNDING
+  SEASONAL
+  MILESTONE
+  CHALLENGE
+  CO_SHIPPER
+  TRUSTED_DEV
+  STREAK
 }

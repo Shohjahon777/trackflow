@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { z } from "zod";
+import { awardXp, tickStreak } from "@/lib/xp";
 
 const milestoneSchema = z.object({
   title: z.string().min(1, "Title is required").max(200),
@@ -69,6 +70,15 @@ export async function toggleMilestone(milestoneId: string) {
     where: { id: milestoneId },
     data: { completed: !milestone.completed },
   });
+
+  if (!milestone.completed) {
+    await awardXp({
+      userId: session.user.id,
+      action: "MILESTONE",
+      projectId: milestone.projectId,
+    });
+    await tickStreak(session.user.id);
+  }
 
   revalidatePath(`/projects/${milestone.projectId}`);
   return { milestone: updated };

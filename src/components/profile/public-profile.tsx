@@ -8,6 +8,8 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ActivityHeatmap } from "@/components/profile/activity-heatmap";
+import { LeagueBadge } from "@/components/profile/league-badge";
+import { levelFromXp } from "@/lib/xp";
 import type { ProjectStatus } from "@prisma/client";
 
 const statusVariant: Record<string, "success" | "info"> = {
@@ -22,6 +24,10 @@ type ProfileUser = {
   image: string | null;
   githubUsername: string | null;
   createdAt: Date;
+  xp: number;
+  level: number;
+  proofOfWorkScore: number;
+  longestStreak: number;
 };
 
 type ProfileProject = {
@@ -57,6 +63,11 @@ export function PublicProfile({
   activity = [],
 }: PublicProfileProps) {
   const displayName = user.name ?? user.username;
+  const levelInfo = levelFromXp(user.xp);
+  const xpProgress = Math.round(levelInfo.progress * 100);
+  const leagueAccent = `var(--color-league-${levelInfo.league.slug}-accent)`;
+  const leagueLight = `var(--color-league-${levelInfo.league.slug}-light)`;
+  const leagueBorder = `var(--color-league-${levelInfo.league.slug}-border)`;
   const memberSince = user.createdAt.toLocaleDateString("en-US", {
     month: "long",
     year: "numeric",
@@ -70,10 +81,18 @@ export function PublicProfile({
           <img
             src={user.image}
             alt={displayName}
-            className="size-[72px] rounded-full"
+            className="size-[72px] rounded-full ring-[1.5px] ring-offset-2 ring-offset-background"
+            style={{ ["--tw-ring-color" as string]: leagueBorder }}
           />
         ) : (
-          <div className="flex size-[72px] items-center justify-center rounded-full bg-accent-light text-[24px] font-medium text-accent">
+          <div
+            className="flex size-[72px] items-center justify-center rounded-full text-[24px] font-medium ring-[1.5px] ring-offset-2 ring-offset-background"
+            style={{
+              backgroundColor: leagueLight,
+              color: leagueAccent,
+              ["--tw-ring-color" as string]: leagueBorder,
+            }}
+          >
             {displayName.charAt(0).toUpperCase()}
           </div>
         )}
@@ -82,38 +101,54 @@ export function PublicProfile({
           <h1 className="text-[28px] font-medium leading-[1.2] text-text-primary">
             {displayName}
           </h1>
-          <p className="mt-0.5 text-[14px] text-text-tertiary">
-            @{user.username}
-          </p>
-          {user.bio && (
-            <p className="mt-2 max-w-[480px] text-[14px] leading-[1.7] text-text-secondary">
-              {user.bio}
-            </p>
-          )}
+          <p className="mt-0.5 text-[14px] text-text-tertiary">@{user.username}</p>
+        </div>
 
-          <div className="mt-3 flex items-center gap-4 text-[12px] text-text-tertiary">
-            {user.githubUsername && (
-              <a
-                href={`https://github.com/${user.githubUsername}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1 transition-colors hover:text-text-primary"
-              >
-                <Github size={13} strokeWidth={1.5} />
-                {user.githubUsername}
-              </a>
-            )}
-            <span className="flex items-center gap-1">
-              <Calendar size={13} strokeWidth={1.5} />
-              Member since {memberSince}
-            </span>
-          </div>
+        {/* League emblem */}
+        <div className="flex flex-col items-center">
+          <LeagueBadge
+            league={levelInfo.league.slug}
+            tier={levelInfo.tier}
+            size={56}
+            fullName={levelInfo.fullName}
+          />
+          <p
+            className="mt-1 font-mono text-[11px] font-medium"
+            style={{ color: leagueAccent }}
+          >
+            {levelInfo.fullName}
+          </p>
         </div>
       </header>
+      <div className="ml-[92px]">
+        {user.bio && (
+          <p className="mt-2 max-w-[480px] text-[14px] leading-[1.7] text-text-secondary">
+            {user.bio}
+          </p>
+        )}
+
+        <div className="mt-3 flex items-center gap-4 text-[12px] text-text-tertiary">
+          {user.githubUsername && (
+            <a
+              href={`https://github.com/${user.githubUsername}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 transition-colors hover:text-text-primary"
+            >
+              <Github size={13} strokeWidth={1.5} />
+              {user.githubUsername}
+            </a>
+          )}
+          <span className="flex items-center gap-1">
+            <Calendar size={13} strokeWidth={1.5} />
+            Member since {memberSince}
+          </span>
+        </div>
+      </div>
 
       {/* Stats */}
-      <div className="mt-8 flex gap-4">
-        <div className="flex-1 rounded-md border-[0.5px] border-border bg-surface p-4">
+      <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <div className="rounded-md border-[0.5px] border-border bg-surface p-4">
           <span className="text-[11px] font-medium uppercase tracking-[0.04em] text-text-tertiary">
             Projects
           </span>
@@ -121,7 +156,21 @@ export function PublicProfile({
             {projects.length}
           </p>
         </div>
-        <div className="flex-1 rounded-md border-[0.5px] border-border bg-surface p-4">
+        <div className="rounded-md border-[0.5px] border-border bg-surface p-4">
+          <span className="text-[11px] font-medium uppercase tracking-[0.04em] text-text-tertiary">
+            Proof of work
+          </span>
+          <p className="mt-1 flex items-baseline gap-1">
+            <span
+              className="font-mono text-[24px] font-medium leading-none"
+              style={{ color: leagueAccent }}
+            >
+              {user.proofOfWorkScore}
+            </span>
+            <span className="font-mono text-[12px] text-text-tertiary">/100</span>
+          </p>
+        </div>
+        <div className="rounded-md border-[0.5px] border-border bg-surface p-4">
           <span className="text-[11px] font-medium uppercase tracking-[0.04em] text-text-tertiary">
             Ship streak
           </span>
@@ -129,16 +178,31 @@ export function PublicProfile({
             <span className="font-mono text-[24px] font-medium leading-none text-text-primary">
               {streak}
             </span>
-            <span className="text-[12px] text-text-tertiary">days</span>
+            <span className="text-[12px] text-text-tertiary">
+              days{user.longestStreak > streak ? ` · best ${user.longestStreak}` : ""}
+            </span>
           </p>
         </div>
-        <div className="flex-1 rounded-md border-[0.5px] border-border bg-surface p-4">
+        <div className="rounded-md border-[0.5px] border-border bg-surface p-4">
           <span className="text-[11px] font-medium uppercase tracking-[0.04em] text-text-tertiary">
-            Technologies
+            XP
           </span>
           <p className="mt-1 font-mono text-[24px] font-medium leading-none text-text-primary">
-            {techs.length}
+            {user.xp.toLocaleString()}
           </p>
+          {levelInfo.nextMin !== null && (
+            <div className="mt-2">
+              <div className="h-[3px] w-full overflow-hidden rounded-full bg-border">
+                <div
+                  className="h-full transition-all"
+                  style={{ width: `${xpProgress}%`, backgroundColor: leagueAccent }}
+                />
+              </div>
+              <p className="mt-1 font-mono text-[10px] text-text-tertiary">
+                {(levelInfo.nextMin - user.xp).toLocaleString()} to {levelInfo.nextFullName}
+              </p>
+            </div>
+          )}
         </div>
       </div>
 

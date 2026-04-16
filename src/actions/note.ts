@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { z } from "zod";
 import { checkLimit } from "@/lib/plan";
+import { awardXp, tickStreak } from "@/lib/xp";
 
 const createNoteSchema = z.object({
   title: z.string().min(1, "Title is required").max(200),
@@ -56,6 +57,13 @@ export async function createNote(formData: FormData) {
   const note = await db.note.create({
     data: parsed.data,
   });
+
+  await awardXp({
+    userId: session.user.id,
+    action: "BRAIN_NOTE",
+    projectId: parsed.data.projectId,
+  });
+  await tickStreak(session.user.id);
 
   revalidatePath("/brain");
   revalidatePath(`/projects/${parsed.data.projectId}`);

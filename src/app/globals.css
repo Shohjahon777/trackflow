@@ -73,6 +73,32 @@
   --chart-3: #5B8CA8;
   --chart-4: #C4956A;
   --chart-5: #8E8EC5;
+
+  /* League palette (BRANDBOOK.md §2.6) */
+  --league-bronze-accent: #A87A4E;
+  --league-bronze-light: #F5ECE0;
+  --league-bronze-border: #D4B48C;
+  --league-silver-accent: #8A8A84;
+  --league-silver-light: #EDEDE9;
+  --league-silver-border: #B8B8B2;
+  --league-gold-accent: #C4956A;
+  --league-gold-light: #FBF3EB;
+  --league-gold-border: #E0B888;
+  --league-crystal-accent: #5B8CA8;
+  --league-crystal-light: #EBF2F7;
+  --league-crystal-border: #A8C4D6;
+  --league-master-accent: #8E8EC5;
+  --league-master-light: #EEEEF6;
+  --league-master-border: #B8B8DC;
+  --league-champion-accent: #6366A0;
+  --league-champion-light: #EEEEF6;
+  --league-champion-border: #9C9CC4;
+  --league-titan-accent: #4B4E84;
+  --league-titan-light: #E4E4F0;
+  --league-titan-border: #7A7DAE;
+  --league-legend-accent: #B85A5A;
+  --league-legend-light: #FBEDED;
+  --league-legend-border: #D49090;
 }
 
 /* ─── Dark Mode (BRANDBOOK.md §8) ─── */
@@ -136,6 +162,32 @@
   --chart-3: #7BAEC8;
   --chart-4: #D4A87A;
   --chart-5: #9494DA;
+
+  /* League palette — dark (BRANDBOOK.md §2.6) */
+  --league-bronze-accent: #C89772;
+  --league-bronze-light: #2E2418;
+  --league-bronze-border: #5A4330;
+  --league-silver-accent: #B0B0A8;
+  --league-silver-light: #242422;
+  --league-silver-border: #4A4A45;
+  --league-gold-accent: #D4A87A;
+  --league-gold-light: #2E2418;
+  --league-gold-border: #6B5030;
+  --league-crystal-accent: #7BAEC8;
+  --league-crystal-light: #1A2430;
+  --league-crystal-border: #355065;
+  --league-master-accent: #A8A8D8;
+  --league-master-light: #22223A;
+  --league-master-border: #45456A;
+  --league-champion-accent: #7B7BD0;
+  --league-champion-light: #22223A;
+  --league-champion-border: #4A4A7A;
+  --league-titan-accent: #9494DA;
+  --league-titan-light: #1E1E38;
+  --league-titan-border: #3A3A6A;
+  --league-legend-accent: #D48A8A;
+  --league-legend-light: #2E1A1A;
+  --league-legend-border: #5A3535;
 }
 
 /* ─── Tailwind v4 Theme ─── */
@@ -211,6 +263,32 @@
   --color-indigo-500: #6366A0;
   --color-indigo-600: #4B4E84;
   --color-indigo-800: #353764;
+
+  /* League palette tokens */
+  --color-league-bronze-accent: var(--league-bronze-accent);
+  --color-league-bronze-light: var(--league-bronze-light);
+  --color-league-bronze-border: var(--league-bronze-border);
+  --color-league-silver-accent: var(--league-silver-accent);
+  --color-league-silver-light: var(--league-silver-light);
+  --color-league-silver-border: var(--league-silver-border);
+  --color-league-gold-accent: var(--league-gold-accent);
+  --color-league-gold-light: var(--league-gold-light);
+  --color-league-gold-border: var(--league-gold-border);
+  --color-league-crystal-accent: var(--league-crystal-accent);
+  --color-league-crystal-light: var(--league-crystal-light);
+  --color-league-crystal-border: var(--league-crystal-border);
+  --color-league-master-accent: var(--league-master-accent);
+  --color-league-master-light: var(--league-master-light);
+  --color-league-master-border: var(--league-master-border);
+  --color-league-champion-accent: var(--league-champion-accent);
+  --color-league-champion-light: var(--league-champion-light);
+  --color-league-champion-border: var(--league-champion-border);
+  --color-league-titan-accent: var(--league-titan-accent);
+  --color-league-titan-light: var(--league-titan-light);
+  --color-league-titan-border: var(--league-titan-border);
+  --color-league-legend-accent: var(--league-legend-accent);
+  --color-league-legend-light: var(--league-legend-light);
+  --color-league-legend-border: var(--league-legend-border);
 
   /* Fonts */
   --font-sans: var(--font-geist-sans), system-ui, sans-serif;

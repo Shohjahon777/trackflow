@@ -148,6 +148,27 @@ TrackFlow is for **solo builders managing multiple concurrent projects** who wan
 2. **Text on colored bg**: Use darkest shade from same family. Never gray/black on color.
 3. **WCAG AA minimum**: 4.5:1 normal text, 3:1 large text. Charcoal on Cloud = 10.2:1.
 
+### 2.6 League Palette
+
+Eight muted league accents drive the gamification layer (league badge + profile ring + PoW stat color). Values are kept desaturated to preserve the quiet-luxury tone. Each league has `accent` (foreground strokes / stat values), `light` (badge fill), and `border` (profile ring / badge outline).
+
+| League    | Light accent | Light bg  | Dark accent | Dark bg   | Usage                                    |
+|-----------|--------------|-----------|-------------|-----------|------------------------------------------|
+| Bronze    | `#A87A4E`    | `#F5ECE0` | `#C89772`   | `#2E2418` | Entry tier (rank 1–3)                    |
+| Silver    | `#8A8A84`    | `#EDEDE9` | `#B0B0A8`   | `#242422` | Rank 4–6                                 |
+| Gold      | `#C4956A`    | `#FBF3EB` | `#D4A87A`   | `#2E2418` | Rank 7–9 (shares Warning base)           |
+| Crystal   | `#5B8CA8`    | `#EBF2F7` | `#7BAEC8`   | `#1A2430` | Rank 10–12 (shares Info base)            |
+| Master    | `#8E8EC5`    | `#EEEEF6` | `#A8A8D8`   | `#22223A` | Rank 13–15 (Indigo 300)                  |
+| Champion  | `#6366A0`    | `#EEEEF6` | `#7B7BD0`   | `#22223A` | Rank 16–18 (brand accent)                |
+| Titan     | `#4B4E84`    | `#E4E4F0` | `#9494DA`   | `#1E1E38` | Rank 19–21 (Indigo 600)                  |
+| Legend    | `#B85A5A`    | `#FBEDED` | `#D48A8A`   | `#2E1A1A` | Rank 22–24 (rarest; ruby, no dark fill)  |
+
+**Usage rules**
+- League colors appear ONLY within gamification surfaces: league badge SVG, profile avatar ring, PoW stat card value, XP progress bar. Never on primary UI (buttons, nav, form controls) — those stay Indigo 500.
+- Borders are the only league color allowed around avatars. Ring thickness: 1.5px. Use `ring-offset-2 ring-offset-background` to separate from the ring itself.
+- Badge emblems fill with `accent` at 0.85–0.95 opacity on the `light` background.
+- The sub-tier numeral (III/II/I) is encoded as 1–3 pip dots below the emblem. The top rank (Legend I) drops the numeral entirely.
+
 ---
 
 ## 3. Typography

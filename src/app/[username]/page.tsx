@@ -51,6 +51,11 @@ export default async function ProfilePage({ params }: Props) {
       image: true,
       githubUsername: true,
       createdAt: true,
+      xp: true,
+      level: true,
+      proofOfWorkScore: true,
+      currentStreak: true,
+      longestStreak: true,
       projects: {
         where: { status: { in: ["ACTIVE", "DEPLOYED"] }, showOnProfile: true },
         select: {
@@ -73,27 +78,7 @@ export default async function ProfilePage({ params }: Props) {
     notFound();
   }
 
-  // Calculate streak (consecutive days with project updates)
-  const updates = user.projects
-    .map((p) => p.updatedAt.toISOString().split("T")[0])
-    .sort()
-    .reverse();
-
-  const uniqueDays = [...new Set(updates)];
-  let streak = 0;
-  const today = new Date();
-
-  for (let i = 0; i < uniqueDays.length; i++) {
-    const expected = new Date(today);
-    expected.setDate(expected.getDate() - i);
-    const expectedStr = expected.toISOString().split("T")[0];
-
-    if (uniqueDays[i] === expectedStr) {
-      streak++;
-    } else {
-      break;
-    }
-  }
+  const streak = user.currentStreak;
 
   // Collect all unique techs
   const allTechs = [...new Set(user.projects.flatMap((p) => p.stack))];
@@ -136,6 +121,10 @@ export default async function ProfilePage({ params }: Props) {
           image: user.image,
           githubUsername: user.githubUsername,
           createdAt: user.createdAt,
+          xp: user.xp,
+          level: user.level,
+          proofOfWorkScore: user.proofOfWorkScore,
+          longestStreak: user.longestStreak,
         }}
         projects={user.projects}
         streak={streak}

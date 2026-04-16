@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import { createProjectSchema, updateProjectSchema } from "@/lib/validations";
 import { checkLimit } from "@/lib/plan";
 import { validateRepoAccess, type RepoValidationResult } from "@/lib/github";
+import { awardXp, tickStreak } from "@/lib/xp";
 
 export async function checkRepoUrl(repoUrl: string): Promise<RepoValidationResult> {
   const session = await auth();
@@ -144,6 +145,25 @@ export async function updateProject(projectId: string, formData: FormData) {
       ...(status ? { status: status as "ACTIVE" | "DEPLOYED" | "STALE" | "ARCHIVED" | "PAUSED" } : {}),
     },
   });
+
+  const newDeploy = !!parsed.data.deployUrl && parsed.data.deployUrl !== project.deployUrl;
+  const shipped = status === "DEPLOYED" && project.status !== "DEPLOYED";
+
+  if (newDeploy) {
+    await awardXp({ userId: session.user.id, action: "DEPLOY", projectId });
+  }
+  if (shipped) {
+    const already = await db.xpEvent.findFirst({
+      where: { userId: session.user.id, actionType: "PROJECT_SHIPPED", projectId },
+      select: { id: true },
+    });
+    if (!already) {
+      await awardXp({ userId: session.user.id, action: "PROJECT_SHIPPED", projectId });
+    }
+  }
+  if (newDeploy || shipped) {
+    await tickStreak(session.user.id);
+  }
 
   revalidatePath("/projects");
   revalidatePath("/overview");
